@@ -1,8 +1,77 @@
 <div class="header custom-header pb-8 pt-5 pt-md-8">
   <div class="container-fluid">
     <div class="header-body">
-      <!-- Card stats -->
-      
+      </div>
+  </div>
+</div>
+
+<div class="container-fluid mt--7">
+  <div class="row">
+    <div class="col">
+      <div class="card shadow">
+        <div class="card-header border-0">
+          <div class="row align-items-center">
+            <div class="col">
+              <h3 class="mb-0">Historial de Compras</h3>
+            </div>
+            </div>
+        </div>
+        
+        <div class="card-body pt-0 pb-3">
+          <div class="row">
+            <div class="col-md-6 col-lg-4 mb-3">
+              <div class="input-group input-group-alternative">
+                <div class="input-group-prepend">
+                  <span class="input-group-text"><i class="fas fa-search"></i></span>
+                </div>
+                <input class="form-control form-control-alternative" placeholder="Buscar Productos" type="text">
+              </div>
+            </div>
+            <div class="col-md-3 col-lg-2 mb-3">
+              <select class="form-control form-control-alternative">
+                <option value="">Filtro</option>
+                <option value="categoria">Categoría</option>
+                <option value="cliente">Cliente</option>
+                </select>
+            </div>
+            <div class="col-md-3 col-lg-2 mb-3">
+              <select class="form-control form-control-alternative">
+                <option value="">Estados</option>
+                <option value="completado">Completado</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="cancelado">Cancelado</option>
+                </select>
+            </div>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-items-center table-flush">
+            <thead class="thead-light">
+              <tr>
+                <th scope="col">ID Compra</th>
+                <th scope="col">Cliente</th>
+                <th scope="col">Producto</th>
+                <th scope="col">Categoría</th>
+                <th scope="col">Fecha Ingreso</th>
+                <th scope="col">Punto Acopio</th>
+                <th scope="col">Destino</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Chofer</th>
+                <th scope="col">Vehículo</th>
+                <th scope="col"></th> </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="true"> 
+                <td colspan="11" class="text-center py-4">
+                  <div class="alert alert-info mb-0">
+                    No hay historial de compras para mostrar.
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>
