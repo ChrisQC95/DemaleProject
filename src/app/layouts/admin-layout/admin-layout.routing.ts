@@ -8,7 +8,7 @@ import { TablesComponent } from '../../pages/tables/tables.component';
 import { ProductosComponent } from '../../pages/productos/productos.component';
 import { EmpleadosComponent } from '../../pages/empleados/empleados.component';
 import { conductoresComponent } from '../../pages/conductores/conductores.component';
-import { enviosProductosComponent } from '../../pages/enviosProductos/enviosProductos.component';
+import { EnviosProductosComponent } from '../../pages/enviosProductos/enviosProductos.component';
 import { historialComponent } from '../../pages/historialProductos/historialProductos.component';
 import { rutasComponent } from '../../pages/rutas/rutas.component';
 import { vehiculosComponent } from '../../pages/vehiculos/vehiculos.component';
@@ -22,7 +22,7 @@ export const AdminLayoutRoutes: Routes = [
     { path: 'productos',                component: ProductosComponent },
     { path: 'empleados',                component: EmpleadosComponent },
     { path: 'conductores',              component: conductoresComponent },
-    { path: 'enviosProductos',          component: enviosProductosComponent },
+    { path: 'enviosProductos',          component: EnviosProductosComponent },
     { path: 'historialProductos',       component: historialComponent },
     { path: 'rutas',                    component: rutasComponent },
     { path: 'vehiculos',                component: vehiculosComponent },

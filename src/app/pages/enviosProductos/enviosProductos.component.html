@@ -1,8 +1,188 @@
 <div class="header custom-header pb-8 pt-5 pt-md-8">
   <div class="container-fluid">
     <div class="header-body">
-      <!-- Card stats -->
-      
+      <!-- Puedes agregar más contenido aquí si lo deseas -->
     </div>
   </div>
 </div>
+
+<div class="container-fluid mt--7">
+  <div class="row">
+    <div class="col">
+      <div class="card shadow">
+        <div class="card-header border-0">
+          <div class="row align-items-center">
+            <div class="col">
+              <h3 class="mb-0">Envíos</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filtros + Botón -->
+        <div class="card-body pt-0 pb-3">
+          <div class="row">
+            <div class="col-md-6 col-lg-4 mb-3">
+              <div class="input-group input-group-alternative">
+                <div class="input-group-prepend">
+                  <span class="input-group-text"><i class="fas fa-search"></i></span>
+                </div>
+                <input class="form-control form-control-alternative" placeholder="Buscar Productos" type="text">
+              </div>
+            </div>
+            <div class="col-md-3 col-lg-2 mb-3">
+              <select class="form-control form-control-alternative">
+                <option value="">Filtro</option>
+                <option value="categoria">Categoría</option>
+                <option value="cliente">Cliente</option>
+              </select>
+            </div>
+            <div class="col-md-3 col-lg-2 mb-3">
+              <select class="form-control form-control-alternative">
+                <option value="">Estados</option>
+                <option value="completado">Completado</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="cancelado">Cancelado</option>
+              </select>
+            </div>
+            <div class="col-md-12 col-lg-4 mb-3">
+              <button class="btn btn-primary" style="margin-left: 160px;"(click)="openEnvioModal(envioModal)">
+                <i class="ni ni-fat-add mr-1"></i>Agregar Envío
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla -->
+        <div class="table-responsive">
+          <table class="table align-items-center table-flush">
+            <thead class="thead-light">
+              <tr>
+                <th scope="col">CÓDIGO</th>
+                <th scope="col">DESTINO</th>
+                <th scope="col">FECHA SALIDA</th>
+                <th scope="col">FECHA LLEGADA</th>
+                <th scope="col">CHOFER</th>
+                <th scope="col">PUNTO DE ACOPIO</th>
+                <th scope="col">VEHÍCULO</th>
+                <th scope="col">RUTA</th>
+                <th scope="col">ESTADO</th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="true"> 
+                <td colspan="11" class="text-center py-4">
+                  <div class="alert alert-info mb-0">
+                    No hay historial de compras para mostrar.
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+<ng-template #envioModal let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title">Agregar Envío</h5>
+    <button type="button" class="close" (click)="modal.dismiss('Cross click')" aria-label="Close">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <form>
+      <div class="row">
+        <div class="col-md-3 mb-3">
+          <label for="acopioSelect">ACOPIO</label>
+          <select class="form-control" id="acopioSelect">
+            <option value="">Ingrese una opción</option>
+            <option value="lima">Lima</option>
+            <option value="arequipa">Arequipa</option>
+          </select>
+        </div>
+        <div class="col-md-3 mb-3">
+          <label for="destinoSelect">DESTINO</label>
+          <select class="form-control" id="destinoSelect">
+            <option value="">Ingrese una opción</option>
+            <option value="puno">Puno</option>
+            <option value="ica">Ica</option>
+          </select>
+        </div>
+        <div class="col-md-3 mb-3">
+          <label for="choferSelect">CHOFER</label>
+          <select class="form-control" id="choferSelect">
+            <option value="">Ingrese una opción</option>
+            <option value="chofer1">Chofer 1</option>
+            <option value="chofer2">Chofer 2</option>
+          </select>
+        </div>
+        <div class="col-md-3 mb-3">
+          <label for="vehiculoSelect">VEHICULO</label>
+          <select class="form-control" id="vehiculoSelect">
+            <option value="">Ingrese una opción</option>
+            <option value="vehiculo1">Vehiculo 1</option>
+            <option value="vehiculo2">Vehiculo 2</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="observacionInput">OBSERVACIÓN</label>
+          <input type="text" class="form-control" id="observacionInput" placeholder="Ingrese una observación">
+        </div>
+        <div class="col-md-3 mb-3">
+          <label for="fechaSalidaInput">FECHA SALIDA</label>
+          <input type="date" class="form-control" id="fechaSalidaInput" placeholder="dd / mm / aaaa">
+        </div>
+        <div class="col-md-3 mb-3">
+          <label for="rutaSelect">RUTA</label>
+          <select class="form-control" id="rutaSelect">
+            <option value="">Ingrese una opción</option>
+            <option value="ruta1">Ruta 1</option>
+            <option value="ruta2">Ruta 2</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row mt-3">
+        <div class="col-md-3 mb-3">
+          <label for="fechaInicioInput">FECHA INICIO</label>
+          <input type="date" class="form-control" id="fechaInicioInput" placeholder="dd / mm / aaaa">
+        </div>
+        <div class="col-md-3 mb-3">
+          <label for="fechaFinInput">FECHA FIN</label>
+          <input type="date" class="form-control" id="fechaFinInput" placeholder="dd / mm / aaaa">
+        </div>
+      </div>
+
+      <div class="table-responsive mt-4">
+        <table class="table align-items-center table-flush">
+          <thead class="thead-light">
+            <tr>
+              <th scope="col">CODIGO</th>
+              <th scope="col">PRODUCTO</th>
+              <th scope="col">CATEGORIA</th>
+              <th scope="col">PESO</th>
+              <th scope="col">MEDIDAS</th>
+              <th scope="col">DESTINO</th>
+              <th scope="col">PUNTO ACOPIO</th>
+              <th scope="col">FECHA INGRESO</th>
+              <th scope="col">FECHA LLEGADA</th>
+              <th scope="col"></th> </tr>
+          </thead>
+          <tbody>
+            #datos
+            </tbody>
+        </table>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
+    <button type="button" class="btn btn-primary">Guardar</button>
+  </div>
+</ng-template>
