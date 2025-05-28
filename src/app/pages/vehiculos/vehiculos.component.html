@@ -1,8 +1,119 @@
 <div class="header custom-header pb-8 pt-5 pt-md-8">
   <div class="container-fluid">
     <div class="header-body">
-      <!-- Card stats -->
-      
+      <!-- Puedes agregar estadísticas u otros elementos aquí -->
     </div>
+  </div>
+</div>
+
+<div style="height: 100px;"></div>
+<div class="container-fluid px-4">
+
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <h5 class="fw-bold mt-2">Vehículos</h5>
+
+    <div class="d-flex flex-column flex-sm-row gap-2 mt-2">
+      <!-- Dropdown Estado -->
+      <div class="btn-group">
+        <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown">
+          Estado: {{ filtroEstado || 'Todos' }}
+        </button>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item" href="#" (click)="filtrarEstado('Activo')">Activo</a></li>
+          <li><a class="dropdown-item" href="#" (click)="filtrarEstado('Inactivo')">Inactivo</a></li>
+          <li><a class="dropdown-item" href="#" (click)="filtrarEstado('En mantenimiento')">En mantenimiento</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item" href="#" (click)="filtrarEstado('')">Todos</a></li>
+        </ul>
+      </div>
+
+      <!-- Botón Agregar -->
+      <button class="btn btn-primary" (click)="agregarVehiculo()">Agregar Vehículo</button>
+    </div>
+  </div>
+
+  <!-- Buscador -->
+  <div class="input-group mb-4 w-100" style="max-width: 100%;">
+    <span class="input-group-text bg-white border-end-0">
+      <i class="fas fa-search text-muted"></i>
+    </span>
+    <input
+      type="text"
+      class="form-control border-start-0"
+      placeholder="Buscar Vehículo"
+      [(ngModel)]="busqueda"
+      (ngModelChange)="filtrarVehiculos()"
+    />
+  </div>
+
+  <!-- Formulario -->
+  <div *ngIf="mostrarFormulario" class="card p-4 shadow-sm mb-4">
+    <h6 class="fw-bold mb-3">{{ editandoVehiculo ? 'Editar Vehículo' : 'Agregar Vehículo' }}</h6>
+
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Placa</label>
+        <input type="text" class="form-control" [(ngModel)]="vehiculoActual.placa" />
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Marca</label>
+        <input type="text" class="form-control" [(ngModel)]="vehiculoActual.marca" />
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Modelo</label>
+        <input type="text" class="form-control" [(ngModel)]="vehiculoActual.modelo" />
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Capacidad (KG)</label>
+        <input type="number" class="form-control" [(ngModel)]="vehiculoActual.capacidadKg" />
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Estado</label>
+        <select class="form-control" [(ngModel)]="vehiculoActual.estado">
+          <option value="Activo">Activo</option>
+          <option value="Inactivo">Inactivo</option>
+          <option value="En mantenimiento">En mantenimiento</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+      <button class="btn btn-success" (click)="guardarVehiculo()">
+        {{ editandoVehiculo ? 'Guardar Cambios' : 'Agregar' }}
+      </button>
+      <button class="btn btn-secondary" (click)="cancelarFormulario()">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- Tabla -->
+  <div class="table-responsive bg-white rounded p-3 shadow-sm">
+    <table class="table table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>ID VEHÍCULO</th>
+          <th>PLACA</th>
+          <th>MARCA</th>
+          <th>MODELO</th>
+          <th>CAPACIDAD (KG)</th>
+          <th>ESTADO</th>
+          <th>ACCIONES</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let vehiculo of vehiculosFiltrados">
+          <td>{{ vehiculo.idVehiculo }}</td>
+          <td class="text-truncate" style="max-width: 120px;" [attr.title]="vehiculo.placa">{{ vehiculo.placa }}</td>
+          <td class="text-truncate" style="max-width: 120px;" [attr.title]="vehiculo.marca">{{ vehiculo.marca }}</td>
+          <td class="text-truncate" style="max-width: 120px;" [attr.title]="vehiculo.modelo">{{ vehiculo.modelo }}</td>
+          <td>{{ vehiculo.capacidadKg }}</td>
+          <td>{{ vehiculo.estado }}</td>
+          <td>
+            <button class="btn btn-info btn-sm me-2" (click)="verDetalle(vehiculo)">Detalle</button>
+            <button class="btn btn-warning btn-sm me-2" (click)="editarVehiculo(vehiculo)">Editar</button>
+            <button class="btn btn-danger btn-sm" (click)="eliminarVehiculo(vehiculo.idVehiculo)">Eliminar</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </div>

@@ -2,7 +2,128 @@
   <div class="container-fluid">
     <div class="header-body">
       <!-- Card stats -->
-      
     </div>
+  </div>
+</div>
+
+<div style="height: 100px;"></div>
+
+<div class="container-fluid px-4">
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <h5 class="fw-bold mt-2">Empleados - Conductores</h5>
+    <button class="btn btn-primary mt-2" (click)="agregarConductor()">Agregar Conductor</button>
+  </div>
+
+  <!-- Formulario -->
+  <div *ngIf="mostrarFormulario" class="card p-4 shadow-sm mb-4">
+    <h6 class="fw-bold mb-3">Formulario de Registro de Conductor</h6>
+
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label>Tipo de Documento</label>
+        <select class="form-control" [(ngModel)]="nuevoConductor.tipoDocumento">
+          <option value="DNI">DNI</option>
+          <option value="CARNET EXTRANJERIA">Carnet de Extranjería</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label>Número de Documento</label>
+        <input type="text" class="form-control" [(ngModel)]="nuevoConductor.numeroDocumento">
+      </div>
+      <div class="col-md-4">
+        <label>Nombres</label>
+        <input type="text" class="form-control" [(ngModel)]="nuevoConductor.nombres">
+      </div>
+      <div class="col-md-4">
+        <label>Apellidos</label>
+        <input type="text" class="form-control" [(ngModel)]="nuevoConductor.apellidos">
+      </div>
+      <div class="col-md-4">
+        <label>Número Celular</label>
+        <input type="text" class="form-control" [(ngModel)]="nuevoConductor.celular">
+      </div>
+      <div class="col-md-4">
+        <label>Tipo de Vía</label>
+        <select class="form-control" [(ngModel)]="nuevoConductor.tipoVia">
+          <option value="AV.">AV.</option>
+          <option value="JR.">JR.</option>
+          <option value="PSJ.">PSJ.</option>
+          <option value="CALLE">CALLE</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label>Dirección</label>
+        <input type="text" class="form-control" [(ngModel)]="nuevoConductor.direccion">
+      </div>
+      <div class="col-md-4">
+        <label>Número Municipal</label>
+        <input type="text" class="form-control" [(ngModel)]="nuevoConductor.numeroMunicipal">
+      </div>
+      <div class="col-md-4">
+        <label>Correo</label>
+        <input type="email" class="form-control" [(ngModel)]="nuevoConductor.correo">
+      </div>
+      <div class="col-md-4">
+        <label>Tipo de Licencia</label>
+        <input type="text" class="form-control" [(ngModel)]="nuevoConductor.tipoLicencia">
+      </div>
+      <div class="col-md-4">
+        <label>Archivo</label>
+        <input type="file" class="form-control" (change)="onArchivoSeleccionado($event)">
+      </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+      <button class="btn btn-success" (click)="guardarConductor()">Guardar</button>
+      <button class="btn btn-secondary" (click)="cancelarFormulario()">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- Buscador -->
+  <div class="input-group mb-4" style="max-width: 400px;">
+    <span class="input-group-text bg-white border-end-0" style="padding-right: 12px;">
+      <i class="fas fa-search text-muted"></i>
+    </span>
+    <input type="text" class="form-control border-start-0" placeholder="Buscar Conductor"
+           [(ngModel)]="searchQuery" (ngModelChange)="onSearch()" />
+  </div>
+
+  <!-- Tabla -->
+  <div class="table-responsive bg-white rounded p-3 shadow-sm">
+    <table class="table table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>ID TRABAJADOR</th>
+          <th>TIPO DOC.</th>
+          <th>DOCUMENTO</th>
+          <th>NOMBRES</th>
+          <th>APELLIDOS</th>
+          <th>FECHA NAC.</th>
+          <th>CELULAR</th>
+          <th>DISTRITO</th>
+          <th>PAÍS</th>
+          <th>DIRECCIÓN</th>
+          <th>ACCIONES</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let conductor of filteredConductores">
+          <td>{{ conductor.id }}</td>
+          <td>{{ conductor.tipoDocumento }}</td>
+          <td>{{ conductor.numeroDocumento }}</td>
+          <td>{{ conductor.nombres }}</td>
+          <td>{{ conductor.apellidos }}</td>
+          <td>{{ conductor.fechaNacimiento | date: 'dd/MM/yyyy' }}</td>
+          <td>{{ conductor.celular }}</td>
+          <td>{{ conductor.distrito }}</td>
+          <td>{{ conductor.pais }}</td>
+          <td>{{ conductor.direccion }}</td>
+          <td>
+            <button class="btn btn-warning btn-sm me-2" (click)="editarConductor(conductor)">Editar</button>
+            <button class="btn btn-danger btn-sm" (click)="eliminarConductor(conductor.id)">Eliminar</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </div>

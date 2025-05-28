@@ -7,11 +7,11 @@ import { UserProfileComponent } from '../../pages/user-profile/user-profile.comp
 import { TablesComponent } from '../../pages/tables/tables.component';
 import { ProductosComponent } from '../../pages/productos/productos.component';
 import { EmpleadosComponent } from '../../pages/empleados/empleados.component';
-import { conductoresComponent } from '../../pages/conductores/conductores.component';
+import { ConductoresComponent } from '../../pages/conductores/conductores.component';
 import { enviosProductosComponent } from '../../pages/enviosProductos/enviosProductos.component';
 import { historialComponent } from '../../pages/historialProductos/historialProductos.component';
 import { rutasComponent } from '../../pages/rutas/rutas.component';
-import { vehiculosComponent } from '../../pages/vehiculos/vehiculos.component';
+import { VehiculosComponent } from '../../pages/vehiculos/vehiculos.component';
 
 export const AdminLayoutRoutes: Routes = [
     { path: 'dashboard',                component: DashboardComponent },
@@ -21,9 +21,9 @@ export const AdminLayoutRoutes: Routes = [
     { path: 'maps',                     component: MapsComponent },
     { path: 'productos',                component: ProductosComponent },
     { path: 'empleados',                component: EmpleadosComponent },
-    { path: 'conductores',              component: conductoresComponent },
+    { path: 'conductores',              component: ConductoresComponent },
     { path: 'enviosProductos',          component: enviosProductosComponent },
     { path: 'historialProductos',       component: historialComponent },
     { path: 'rutas',                    component: rutasComponent },
-    { path: 'vehiculos',                component: vehiculosComponent },
+    { path: 'vehiculos',                component: VehiculosComponent },
 ];
