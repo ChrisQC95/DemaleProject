@@ -1,8 +1,102 @@
 <div class="header custom-header pb-8 pt-5 pt-md-8">
   <div class="container-fluid">
     <div class="header-body">
-      <!-- Card stats -->
-      
+      <!-- Puedes agregar estadísticas aquí -->
     </div>
   </div>
+</div>
+
+<div class="conductores-container">
+
+  <!-- Botón en la parte superior derecha -->
+  <div class="boton-superior">
+    <button class="btn btn-primary " (click)="abrirFormulario()">Registrar Conductor</button>
+  </div>
+
+  <!-- Tabla de conductores -->
+  <table class="table table-striped mt-3">
+    <thead>
+      <tr>
+        <th>Tipo Doc</th>
+        <th>N° Doc</th>
+        <th>Nombres</th>
+        <th>Apellidos</th>
+        <th>Celular</th>
+        <th>Correo</th>
+        <th>Licencia</th>
+        <th class="acciones-header">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let conductor of listaConductores; let i = index">
+        <td>{{ conductor.tipoDocumento }}</td>
+        <td>{{ conductor.numeroDocumento }}</td>
+        <td>{{ conductor.nombres }}</td>
+        <td>{{ conductor.apellidos }}</td>
+        <td>{{ conductor.celular }}</td>
+        <td>{{ conductor.correo }}</td>
+        <td>{{ conductor.tipoLicencia }}</td>
+        <td class="acciones-cell">
+          <button class="btn btn-sm btn-warning me-2" (click)="editarConductor(i)">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="btn btn-sm btn-danger" (click)="eliminarConductor(i)">
+            <i class="fas fa-trash"></i>
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Modal formulario -->
+  <div class="modal-backdrop" *ngIf="mostrarFormulario">
+    <div class="modal-form">
+      <h4>{{ editarIndex !== null ? 'Editar Conductor' : 'Registrar Conductor' }}</h4>
+
+      <form (ngSubmit)="registrarConductor()" #form="ngForm" class="form-grid">
+        <div class="form-group">
+          <label>Tipo Documento</label>
+          <input type="text" [(ngModel)]="conductor.tipoDocumento" name="tipoDocumento" class="form-control" required />
+        </div>
+
+        <div class="form-group">
+          <label>N° Documento</label>
+          <input type="text" [(ngModel)]="conductor.numeroDocumento" name="numeroDocumento" class="form-control" required />
+        </div>
+
+        <div class="form-group">
+          <label>Nombres</label>
+          <input type="text" [(ngModel)]="conductor.nombres" name="nombres" class="form-control" required />
+        </div>
+
+        <div class="form-group">
+          <label>Apellidos</label>
+          <input type="text" [(ngModel)]="conductor.apellidos" name="apellidos" class="form-control" required />
+        </div>
+
+        <div class="form-group">
+          <label>Celular</label>
+          <input type="text" [(ngModel)]="conductor.celular" name="celular" class="form-control" required />
+        </div>
+
+        <div class="form-group">
+          <label>Correo</label>
+          <input type="email" [(ngModel)]="conductor.correo" name="correo" class="form-control" required />
+        </div>
+
+        <div class="form-group full-width">
+          <label>Tipo Licencia</label>
+          <input type="text" [(ngModel)]="conductor.tipoLicencia" name="tipoLicencia" class="form-control" required />
+        </div>
+
+        <div class="form-group full-width text-end">
+          <button type="button" class="btn btn-secondary me-2" (click)="cerrarFormulario()">Cancelar</button>
+          <button type="submit" class="btn btn-primary">
+            {{ editarIndex !== null ? 'Guardar' : 'Registrar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 </div>
