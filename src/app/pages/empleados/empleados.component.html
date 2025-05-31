@@ -1,8 +1,150 @@
-<div class="header custom-header pb-8 pt-5 pt-md-8">
+<div class="header custom-header pb-8 pt-5 pt-md-8"> 
   <div class="container-fluid">
     <div class="header-body">
-      <!-- Card stats -->
-      
+      <!-- Puedes agregar más contenido aquí si lo deseas -->
     </div>
   </div>
 </div>
+
+<div class="container-fluid mt--7">
+  <div class="row">
+    <div class="col">
+      <div class="card shadow">
+        <div class="card-header border-0">
+          <div class="row align-items-center">
+            <div class="col">
+              <h3 class="mb-0">Empleados</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filtros + Botón -->
+        <div class="card-body pt-0 pb-3">
+          <div class="row">
+            <div class="col-md-6 col-lg-4 mb-3">
+              <div class="input-group input-group-alternative">
+                <div class="input-group-prepend">
+                  <span class="input-group-text"><i class="fas fa-search"></i></span>
+                </div>
+                <input class="form-control form-control-alternative" placeholder="Buscar Empleado" type="text">
+              </div>
+            </div>
+            <div class="col-md-3 col-lg-2 mb-3">
+              <select class="form-control form-control-alternative">
+                <option value="">Área</option>
+                <option value="recursos">Recursos Humanos</option>
+                <option value="logistica">Logística</option>
+              </select>
+            </div>
+            <div class="col-md-3 col-lg-2 mb-3">
+              <select class="form-control form-control-alternative">
+                <option value="">Estado</option>
+                <option value="activo">Activo</option>
+                <option value="inactivo">Inactivo</option>
+              </select>
+            </div>
+            <div class="col-md-12 col-lg-4 mb-3">
+              <button class="btn btn-primary" style="margin-left: 160px;" (click)="openEmpleadoModal(empleadoModal)">
+                <i class="ni ni-fat-add mr-1"></i>Agregar Empleado
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla -->
+        <div class="table-responsive">
+          <table class="table align-items-center table-flush">
+            <thead class="thead-light">
+              <tr>
+                <th scope="col">ID</th>
+                <th scope="col">NOMBRE</th>
+                <th scope="col">CARGO</th>
+                <th scope="col">DEPARTAMENTO</th>
+                <th scope="col">CORREO</th>
+                <th scope="col">TELÉFONO</th>
+                <th scope="col">FECHA INGRESO</th>
+                <th scope="col">ESTADO</th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="true"> 
+                <td colspan="9" class="text-center py-4">
+                  <div class="alert alert-info mb-0">
+                    No hay empleados registrados para mostrar.
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #empleadoModal let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title">Agregar Empleado</h5>
+    <button type="button" class="close" (click)="modal.dismiss('Cross click')" aria-label="Close">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <form>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="nombreInput">Nombre Completo</label>
+          <input type="text" class="form-control" id="nombreInput" placeholder="Ingrese nombre completo">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="correoInput">Correo Electrónico</label>
+          <input type="email" class="form-control" id="correoInput" placeholder="ejemplo@correo.com">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <label for="cargoSelect">Cargo</label>
+          <select class="form-control" id="cargoSelect">
+            <option value="">Seleccione un cargo</option>
+            <option value="analista">Analista</option>
+            <option value="supervisor">Supervisor</option>
+          </select>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label for="departamentoSelect">Departamento</label>
+          <select class="form-control" id="departamentoSelect">
+            <option value="">Seleccione un departamento</option>
+            <option value="logistica">Logística</option>
+            <option value="rrhh">Recursos Humanos</option>
+          </select>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label for="telefonoInput">Teléfono</label>
+          <input type="text" class="form-control" id="telefonoInput" placeholder="+51 999 999 999">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="fechaIngresoInput">Fecha de Ingreso</label>
+          <input type="date" class="form-control" id="fechaIngresoInput">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="estadoSelect">Estado</label>
+          <select class="form-control" id="estadoSelect">
+            <option value="">Seleccione</option>
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+          </select>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
+    <button type="button" class="btn btn-primary">Guardar</button>
+  </div>
+</ng-template>
