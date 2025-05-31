@@ -10,7 +10,7 @@ import { EmpleadosComponent } from '../../pages/empleados/empleados.component';
 import { conductoresComponent } from '../../pages/conductores/conductores.component';
 import { EnviosProductosComponent } from '../../pages/enviosProductos/enviosProductos.component';
 import { historialComponent } from '../../pages/historialProductos/historialProductos.component';
-import { rutasComponent } from '../../pages/rutas/rutas.component';
+import { RutasComponent } from '../../pages/rutas/rutas.component';
 import { vehiculosComponent } from '../../pages/vehiculos/vehiculos.component';
 
 export const AdminLayoutRoutes: Routes = [
@@ -24,6 +24,6 @@ export const AdminLayoutRoutes: Routes = [
     { path: 'conductores',              component: conductoresComponent },
     { path: 'enviosProductos',          component: EnviosProductosComponent },
     { path: 'historialProductos',       component: historialComponent },
-    { path: 'rutas',                    component: rutasComponent },
+    { path: 'rutas',                    component: RutasComponent },
     { path: 'vehiculos',                component: vehiculosComponent },
 ];
