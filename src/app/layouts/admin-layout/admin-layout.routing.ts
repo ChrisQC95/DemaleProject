@@ -7,11 +7,11 @@ import { UserProfileComponent } from '../../pages/user-profile/user-profile.comp
 import { TablesComponent } from '../../pages/tables/tables.component';
 import { ProductosComponent } from '../../pages/productos/productos.component';
 import { EmpleadosComponent } from '../../pages/empleados/empleados.component';
-import { ConductoresComponent } from '../../pages/conductores/conductores.component';
-import { enviosProductosComponent } from '../../pages/enviosProductos/enviosProductos.component';
+import { conductoresComponent } from '../../pages/conductores/conductores.component';
+import { EnviosProductosComponent } from '../../pages/enviosProductos/enviosProductos.component';
 import { historialComponent } from '../../pages/historialProductos/historialProductos.component';
-import { rutasComponent } from '../../pages/rutas/rutas.component';
-import { VehiculosComponent } from '../../pages/vehiculos/vehiculos.component';
+import { RutasComponent } from '../../pages/rutas/rutas.component';
+import { vehiculosComponent } from '../../pages/vehiculos/vehiculos.component';
 
 export const AdminLayoutRoutes: Routes = [
     { path: 'dashboard',                component: DashboardComponent },
@@ -21,9 +21,9 @@ export const AdminLayoutRoutes: Routes = [
     { path: 'maps',                     component: MapsComponent },
     { path: 'productos',                component: ProductosComponent },
     { path: 'empleados',                component: EmpleadosComponent },
-    { path: 'conductores',              component: ConductoresComponent },
-    { path: 'enviosProductos',          component: enviosProductosComponent },
+    { path: 'conductores',              component: conductoresComponent },
+    { path: 'enviosProductos',          component: EnviosProductosComponent },
     { path: 'historialProductos',       component: historialComponent },
-    { path: 'rutas',                    component: rutasComponent },
-    { path: 'vehiculos',                component: VehiculosComponent },
+    { path: 'rutas',                    component: RutasComponent },
+    { path: 'vehiculos',                component: vehiculosComponent },
 ];

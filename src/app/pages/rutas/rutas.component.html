@@ -1,8 +1,114 @@
 <div class="header custom-header pb-8 pt-5 pt-md-8">
   <div class="container-fluid">
     <div class="header-body">
-      <!-- Card stats -->
-      
+      <!-- Puedes agregar más contenido aquí si lo deseas -->
     </div>
   </div>
 </div>
+
+<div class="container-fluid mt--7">
+  <div class="row">
+    <div class="col">
+      <div class="card shadow">
+        <div class="card-header border-0">
+          <div class="row align-items-center">
+            <div class="col">
+              <h3 class="mb-0">Rutas</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filtros + Botón -->
+        <div class="card-body pt-0 pb-3">
+          <div class="row">
+            <div class="col-md-6 col-lg-4 mb-3">
+              <div class="input-group input-group-alternative">
+                <div class="input-group-prepend">
+                  <span class="input-group-text"><i class="fas fa-search"></i></span>
+                </div>
+                <input class="form-control form-control-alternative" placeholder="Buscar Rutas" type="text">
+              </div>
+            </div>
+            <div class="col-md-3 col-lg-2 mb-3">
+              <select class="form-control form-control-alternative">
+                <option value="">Filtro</option>
+                <option value="codigo">Código de Ruta</option>
+                <option value="nombre">Nombre de Ruta</option>
+              </select>
+            </div>
+            <div class="col-md-3 col-lg-2 mb-3">
+              <select class="form-control form-control-alternative">
+                <option value="">Estados</option>
+                <option value="activa">Activa</option>
+                <option value="inactiva">Inactiva</option>
+              </select>
+            </div>
+            <div class="col-md-12 col-lg-4 mb-3">
+              <button class="btn btn-primary" style="margin-left: 160px;" (click)="openRutaModal(rutaModal)">
+                <i class="ni ni-fat-add mr-1"></i>Agregar Ruta
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla -->
+        <div class="table-responsive">
+          <table class="table align-items-center table-flush">
+            <thead class="thead-light">
+              <tr>
+                <th scope="col">CÓDIGO DE RUTA</th>
+                <th scope="col">NOMBRE DE RUTA</th>
+                <th scope="col">OBSERVACIÓN</th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="true"> 
+                <td colspan="4" class="text-center py-4">
+                  <div class="alert alert-info mb-0">
+                    No hay rutas para mostrar.
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #rutaModal let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title">Agregar Ruta</h5>
+    <button type="button" class="close" (click)="modal.dismiss('Cross click')" aria-label="Close">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <form>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="codigoRutaInput">CÓDIGO DE RUTA</label>
+          <input type="text" class="form-control" id="codigoRutaInput" placeholder="Ingrese código de ruta">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="nombreRutaInput">NOMBRE DE RUTA</label>
+          <input type="text" class="form-control" id="nombreRutaInput" placeholder="Ingrese nombre de ruta">
+        </div>
+      </div>
+
+      <div class="row mt-3">
+        <div class="col-md-12 mb-3">
+          <label for="observacionInput">OBSERVACIÓN</label>
+          <textarea class="form-control" id="observacionInput" rows="3" placeholder="Ingrese una observación..."></textarea>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
+    <button type="button" class="btn btn-primary">Guardar</button>
+  </div>
+</ng-template>
