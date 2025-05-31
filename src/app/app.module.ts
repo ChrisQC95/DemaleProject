@@ -16,6 +16,7 @@ import { ProductosComponent } from './pages/productos/productos.component';
 import { VehiculosComponent } from './pages/vehiculos/vehiculos.component';
 import { ConductoresComponent } from './pages/conductores/conductores.component';
 
+
 @NgModule({
   imports: [
     BrowserAnimationsModule,
@@ -24,7 +25,8 @@ import { ConductoresComponent } from './pages/conductores/conductores.component'
     ComponentsModule,
     NgbModule,
     RouterModule,
-    AppRoutingModule
+    AppRoutingModule,
+    HttpClientModule
   ],
   declarations: [
     AppComponent,

@@ -1,13 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-
-interface Vehiculo {
-  idVehiculo: number;
-  placa: string;
-  marca: string;
-  modelo: string;
-  capacidadKg: number;
-  estado: string;
-}
+import { VehiculoService, Vehiculo } from './servicios/vehiculo.service';
 
 @Component({
   selector: 'app-vehiculos',
@@ -15,94 +7,145 @@ interface Vehiculo {
   styleUrls: ['./vehiculos.component.scss']
 })
 export class VehiculosComponent implements OnInit {
-  vehiculos: Vehiculo[] = [
-    { idVehiculo: 1, placa: 'ABC-123', marca: 'Toyota', modelo: 'Hilux', capacidadKg: 1000, estado: 'Activo' },
-    { idVehiculo: 2, placa: 'XYZ-789', marca: 'Ford', modelo: 'Ranger', capacidadKg: 1200, estado: 'En mantenimiento' },
-    { idVehiculo: 3, placa: 'DEF-456', marca: 'Chevrolet', modelo: 'S10', capacidadKg: 1100, estado: 'Inactivo' },
-  ];
+  listaVehiculos: Vehiculo[] = [];
+  listaFiltrada: Vehiculo[] = [];
+  vehiculo: Vehiculo = this.crearVehiculoVacio();
 
-  vehiculosFiltrados: Vehiculo[] = [];
-  busqueda: string = '';
-  filtroEstado: string = '';
+  mostrarFormulario = false;
+  editarIndex: number | null = null;
 
-  mostrarFormulario: boolean = false;
-  editandoVehiculo: boolean = false;
-  vehiculoActual: Vehiculo = this.nuevoVehiculoVacio();
+  filtroTexto: string = '';
 
-  ngOnInit() {
-    this.vehiculosFiltrados = [...this.vehiculos];
+  constructor(private vehiculoService: VehiculoService) {}
+
+  ngOnInit(): void {
+    this.cargarVehiculos();
   }
 
-  nuevoVehiculoVacio(): Vehiculo {
+  crearVehiculoVacio(): Vehiculo {
     return {
-      idVehiculo: 0,
       placa: '',
       marca: '',
       modelo: '',
-      capacidadKg: 0,
-      estado: 'Activo'
+      capacidad: 0
     };
   }
 
-  filtrarVehiculos() {
-    const busq = this.busqueda.toLowerCase();
-    this.vehiculosFiltrados = this.vehiculos.filter(v => {
-      const coincideBusqueda =
-        v.placa.toLowerCase().includes(busq) ||
-        v.marca.toLowerCase().includes(busq) ||
-        v.modelo.toLowerCase().includes(busq);
-      const coincideEstado = this.filtroEstado ? v.estado === this.filtroEstado : true;
-      return coincideBusqueda && coincideEstado;
+  cargarVehiculos() {
+    this.vehiculoService.listarVehiculos().subscribe(data => {
+      console.log('Vehículos cargados:', data);
+      this.listaVehiculos = data;
+      this.filtrarVehiculos();
     });
   }
 
-  filtrarEstado(estado: string) {
-    this.filtroEstado = estado;
-    this.filtrarVehiculos();
+  trackById(index: number, vehiculo: Vehiculo): number {
+    return vehiculo.IdVehiculo!;
   }
 
-  agregarVehiculo() {
-    this.vehiculoActual = this.nuevoVehiculoVacio();
-    this.editandoVehiculo = false;
+  abrirFormulario() {
+    this.limpiarFormulario();
     this.mostrarFormulario = true;
+    this.editarIndex = null;
   }
 
-  editarVehiculo(vehiculo: Vehiculo) {
-    this.vehiculoActual = { ...vehiculo };
-    this.editandoVehiculo = true;
-    this.mostrarFormulario = true;
+  cerrarFormulario() {
+    this.mostrarFormulario = false;
+    this.limpiarFormulario();
+    this.editarIndex = null;
   }
 
-  guardarVehiculo() {
-    if (this.editandoVehiculo) {
-      const index = this.vehiculos.findIndex(v => v.idVehiculo === this.vehiculoActual.idVehiculo);
-      if (index !== -1) {
-        this.vehiculos[index] = { ...this.vehiculoActual };
+  limpiarFormulario() {
+    this.vehiculo = this.crearVehiculoVacio();
+  }
+
+  registrarVehiculo() {
+    console.log('Registrando/actualizando vehículo:', this.vehiculo);
+    console.log('Editar índice:', this.editarIndex);
+
+    if (
+      this.vehiculo.placa.trim() &&
+      this.vehiculo.marca.trim() &&
+      this.vehiculo.modelo.trim() &&
+      this.vehiculo.capacidad > 0
+    ) {
+      if (this.editarIndex !== null && this.listaVehiculos[this.editarIndex].IdVehiculo) {
+        // Edición
+        this.vehiculo.IdVehiculo = this.listaVehiculos[this.editarIndex].IdVehiculo!;
+        this.vehiculoService.actualizarVehiculo(this.vehiculo).subscribe({
+          next: (vehActualizado) => {
+            this.listaVehiculos[this.editarIndex!] = vehActualizado;
+            this.filtrarVehiculos();
+            this.cerrarFormulario();
+          },
+          error: (err) => {
+            alert('Error al actualizar vehículo');
+            console.error(err);
+          }
+        });
+      } else {
+        // Registro nuevo
+        const nuevoVehiculo = { ...this.vehiculo };
+        delete nuevoVehiculo.IdVehiculo;
+        this.vehiculoService.agregarVehiculo(nuevoVehiculo).subscribe({
+          next: (vehRegistrado) => {
+            this.listaVehiculos.push(vehRegistrado);
+            this.filtrarVehiculos();
+            this.cerrarFormulario();
+          },
+          error: (err) => {
+            alert('Error al registrar vehículo');
+            console.error(err);
+          }
+        });
       }
     } else {
-      const nuevoId = this.vehiculos.length > 0 ? Math.max(...this.vehiculos.map(v => v.idVehiculo)) + 1 : 1;
-      const nuevoVehiculo = { ...this.vehiculoActual, idVehiculo: nuevoId };
-      this.vehiculos.push(nuevoVehiculo);
-    }
-
-    this.cancelarFormulario();
-    this.filtrarVehiculos();
-  }
-
-  cancelarFormulario() {
-    this.mostrarFormulario = false;
-    this.vehiculoActual = this.nuevoVehiculoVacio();
-    this.editandoVehiculo = false;
-  }
-
-  eliminarVehiculo(id: number) {
-    if (confirm('¿Está seguro que desea eliminar este vehículo?')) {
-      this.vehiculos = this.vehiculos.filter(v => v.idVehiculo !== id);
-      this.filtrarVehiculos();
+      alert('Por favor complete todos los campos correctamente');
     }
   }
 
-  verDetalle(vehiculo: Vehiculo) {
-    alert(`Detalle del vehículo:\nID: ${vehiculo.idVehiculo}\nPlaca: ${vehiculo.placa}`);
+  editarVehiculo(index: number) {
+    const vehiculoFiltrado = this.listaFiltrada[index];
+    if (!vehiculoFiltrado) {
+      alert('Vehículo no encontrado para editar');
+      return;
+    }
+    this.editarIndex = this.listaVehiculos.findIndex(
+      v => v.IdVehiculo === vehiculoFiltrado.IdVehiculo
+    );
+    this.vehiculo = { ...vehiculoFiltrado };
+    this.mostrarFormulario = true;
+  }
+
+  eliminarVehiculo(index: number) {
+    const vehiculoFiltrado = this.listaFiltrada[index];
+    if (!vehiculoFiltrado || !vehiculoFiltrado.IdVehiculo) {
+      alert('Vehículo no encontrado para eliminar');
+      return;
+    }
+    if (confirm(`¿Seguro que desea eliminar el vehículo ${vehiculoFiltrado.placa}?`)) {
+      this.vehiculoService.eliminarVehiculo(vehiculoFiltrado.IdVehiculo).subscribe({
+        next: () => {
+          this.listaVehiculos = this.listaVehiculos.filter(v => v.IdVehiculo !== vehiculoFiltrado.IdVehiculo);
+          this.filtrarVehiculos();
+        },
+        error: (err) => {
+          alert('Error al eliminar vehículo');
+          console.error(err);
+        }
+      });
+    }
+  }
+
+  filtrarVehiculos() {
+    const filtro = this.filtroTexto.toLowerCase();
+    this.listaFiltrada = this.listaVehiculos.filter(v =>
+      v.placa.toLowerCase().includes(filtro) ||
+      v.marca.toLowerCase().includes(filtro) ||
+      v.modelo.toLowerCase().includes(filtro)
+    );
   }
 }
+
+
+
