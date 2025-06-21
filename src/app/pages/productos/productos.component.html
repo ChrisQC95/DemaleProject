@@ -89,91 +89,186 @@
       <!-- Sección de Registro/Edición -->
       <div class="col-lg-6">
         <div class="card shadow">
-          <div class="card-header bg-transparent border-0">
-            <h3 class="mb-0" [class.text-success]="!isEditMode" [class.text-primary]="isEditMode">
-              <i class="ni ni-single-02 mr-2"></i> 
-              {{ isEditMode ? 'Confirmar Cliente' : 'Registrar Nuevo Cliente' }}
-            </h3>
-          </div>
-          <div class="card-body">
-            <form #clientForm="ngForm" (ngSubmit)="onSubmit()">
-              <div class="form-row">
-                <div class="col-md-6">
-                  <div class="form-group">
-                    <label class="form-control-label">Nombres</label>
-                    <input class="form-control" 
-                          name="nombres" 
-                          [(ngModel)]="currentClient.nombres" 
-                          required>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="form-group">
-                    <label class="form-control-label">Apellidos</label>
-                    <input class="form-control" 
-                          name="apellidos" 
-                          [(ngModel)]="currentClient.apellidos" 
-                          required>
-                  </div>
-                </div>
-              </div>
+            <div class="card-header bg-transparent border-0">
+                <h3 class="mb-0" [class.text-success]="!isEditMode" [class.text-primary]="isEditMode">
+                    <i class="ni ni-single-02 mr-2"></i>
+                    {{ isEditMode ? 'Confirmar Cliente' : 'Registrar Nuevo Cliente' }}
+                </h3>
+            </div>
+            <div class="card-body">
+                <form #clientForm="ngForm" (ngSubmit)="onSubmit()">
+                    <div class="form-row" *ngIf="showNaturalPersonFields">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-control-label">Nombres <span class="text-danger">*</span></label>
+                                <input class="form-control"
+                                      name="nombres"
+                                      [(ngModel)]="currentClient.nombres"
+                                      [required]="showNaturalPersonFields"> </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-control-label">Apellidos <span class="text-danger">*</span></label>
+                                <input class="form-control"
+                                      name="apellidos"
+                                      [(ngModel)]="currentClient.apellidos"
+                                      [required]="showNaturalPersonFields"> </div>
+                        </div>
+                    </div>
 
-              <div class="form-group">
-                <label class="form-control-label">Tipo de Documento</label>
-                <select class="form-control" 
-                        name="tipoDocumento" 
-                        [(ngModel)]="currentClient.tipoDocumento" 
-                        required>
-                  <option value="">Seleccionar...</option>
-                  <option value="DNI">DNI</option>
-                  <option value="RUC">RUC</option>
-                  <option value="CE">Carnet Extranjería</option>
-                </select>
-              </div>
-              
-              <div class="form-group">
-                <label class="form-control-label">Número de Documento</label>
-                <input class="form-control" 
-                      name="numeroDocumento" 
-                      [(ngModel)]="currentClient.numeroDocumento" 
-                      required>
-              </div>
-              
-              <div class="form-group">
-                <label class="form-control-label">Teléfono</label>
-                <input class="form-control" 
-                      name="telefono" 
-                      [(ngModel)]="currentClient.telefono" 
-                      type="tel">
-              </div>
-              
-              <div class="form-group">
-                <label class="form-control-label">Correo Electrónico</label>
-                <input class="form-control" 
-                      name="email" 
-                      [(ngModel)]="currentClient.email" 
-                      type="email">
-              </div>
-              
-              <div class="text-center">
-                <button type="submit" 
-                        class="btn btn-success mt-4 mr-2"
-                        [disabled]="!clientForm.valid">
-                  <i class="ni ni-check-bold mr-2"></i> 
-                  {{ isEditMode ? 'Continuar' : 'Registrar' }}
-                </button>
+                    <div class="form-row" *ngIf="showLegalPersonFields">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="form-control-label">Razón Social <span class="text-danger">*</span></label>
+                                <input class="form-control"
+                                      name="razonSocial"
+                                      [(ngModel)]="currentClient.razonSocial"
+                                      [required]="showLegalPersonFields"> </div>
+                        </div>
+                    </div>
 
-                <button *ngIf="isEditMode" 
-                        type="button" 
-                        class="btn btn-secondary mt-4"
-                        (click)="onCancelEdit()">
-                  <i class="ni ni-fat-remove mr-2"></i> Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
+                    <div class="form-row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-control-label">Tipo de Documento <span class="text-danger">*</span></label>
+                                <select class="form-control"
+                                        name="tipoDocumento"
+                                        [(ngModel)]="currentClient.idTipoDoc"
+                                        (change)="onDocumentTypeChange()" required>
+                                    <option [ngValue]="undefined" disabled>Seleccionar...</option>
+                                    <option *ngFor="let td of tiposDocumento" [ngValue]="td.idTipoDoc">{{ td.nombreDoc }}</option>
+                                </select>
+                                <div *ngIf="clientForm.controls['tipoDocumento']?.invalid && clientForm.controls['tipoDocumento']?.touched" class="text-danger mt-1">
+                                    El tipo de documento es requerido.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group"> <label for="tipoCliente" class="form-label">Tipo de Cliente <span class="text-danger">*</span></label>
+                                <select class="form-control" id="tipoCliente" name="idTipoCliente" [(ngModel)]="currentClient.idTipoCliente" required>
+                                    <option [ngValue]="undefined" disabled>Seleccione un tipo de cliente</option>
+                                    <option *ngFor="let tc of tiposCliente" [ngValue]="tc.idTipoCliente">{{ tc.tipoCliente }}</option>
+                                </select>
+                                <div *ngIf="clientForm.controls['idTipoCliente']?.invalid && clientForm.controls['idTipoCliente']?.touched" class="text-danger mt-1">
+                                    El tipo de cliente es requerido.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-control-label">Número de Documento</label>
+                        <div class="input-group">
+                            <input class="form-control"
+                                  name="numeroDocumento"
+                                  [(ngModel)]="currentClient.numeroDocumento"
+                                  (input)="clearDocumentLookupResults()"
+                                  #numeroDocumentoNgModel="ngModel" [minlength]="getMinLengthForDocumentType()"  [maxlength]="getMaxLengthForDocumentType()"  required
+                            >
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-primary" type="button"
+                                        (click)="onLookupDocument()"
+                                        [disabled]="!currentClient.numeroDocumento || isLoadingDocument || numeroDocumentoNgModel.invalid">
+                                    <span *ngIf="isLoadingDocument" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    <i *ngIf="!isLoadingDocument" class="fas fa-search"></i>
+                                    <span *ngIf="!isLoadingDocument"> Consultar</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div *ngIf="numeroDocumentoNgModel.invalid && (numeroDocumentoNgModel.dirty || numeroDocumentoNgModel.touched)" class="text-danger mt-1">
+                            <div *ngIf="numeroDocumentoNgModel.errors?.['required']">El número de documento es requerido.</div>
+                            <div *ngIf="numeroDocumentoNgModel.errors?.['minlength']">
+                                El número debe tener al menos {{ getMinLengthForDocumentType() }} dígitos para el tipo seleccionado.
+                            </div>
+                            <div *ngIf="numeroDocumentoNgModel.errors?.['maxlength']">
+                                El número no debe exceder {{ getMaxLengthForDocumentType() }} dígitos para el tipo seleccionado.
+                            </div>
+                        </div>
+                        <div *ngIf="documentLookupResult" class="mt-2">
+                            <div *ngIf="documentLookupResult.success" class="text-success small">
+                                <i class="fas fa-check-circle"></i> Datos obtenidos: {{ documentLookupResult.fullName }}
+                            </div>
+                            <div *ngIf="!documentLookupResult.success" class="text-danger small">
+                                <i class="fas fa-exclamation-circle"></i> {{ documentLookupResult.errorMessage }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-control-label">Teléfono</label>
+                        <input class="form-control"
+                                  name="telefono"
+                                  [(ngModel)]="currentClient.telefono"
+                                  type="tel">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-control-label">Correo Electrónico</label>
+                        <input class="form-control"
+                                  name="email"
+                                  [(ngModel)]="currentClient.email"
+                                  type="email">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-control-label">Distrito</label>
+                                <select class="form-control"
+                                        name="idDistrito"
+                                        [(ngModel)]="currentClient.idDistrito">
+                                    <option [ngValue]="undefined">Seleccionar...</option>
+                                    <option *ngFor="let d of distritos" [ngValue]="d.idDistrito">{{ d.nombreDistrito }}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-control-label">Tipo de Vía</label>
+                                <select class="form-control"
+                                        name="idTipoVia"
+                                        [(ngModel)]="currentClient.idTipoVia">
+                                    <option [ngValue]="undefined">Seleccionar...</option>
+                                    <option *ngFor="let tv of tiposVia" [ngValue]="tv.idTipoVia">{{ tv.nombreTipoVia }}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-control-label">Dirección</label>
+                        <input class="form-control"
+                              name="direccion"
+                              [(ngModel)]="currentClient.direccion"
+                              type="text">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-control-label">N° Municipal</label>
+                        <input class="form-control"
+                              name="nMunicipal"
+                              [(ngModel)]="currentClient.nMunicipal"
+                              type="text">
+                    </div>
+
+
+                    <div class="text-center">
+                        <button type="submit"
+                                    class="btn btn-success mt-4 mr-2"
+                                    [disabled]="!clientForm.valid">
+                            <i class="ni ni-check-bold mr-2"></i>
+                            {{ isEditMode ? 'Continuar' : 'Registrar' }}
+                        </button>
+
+                        <button *ngIf="isEditMode"
+                                    type="button"
+                                    class="btn btn-secondary mt-4"
+                                    (click)="onCancelEdit()">
+                            <i class="ni ni-fat-remove mr-2"></i> Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
-      </div>
+    </div>
     </div>
   </div>
   <div class="tab-pane fade" [ngClass]="{'show active': activeTab === 'producto'}">
