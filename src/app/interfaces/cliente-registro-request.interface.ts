@@ -1,7 +1,7 @@
 export interface ClienteRegistroRequest {
-    nombres?: string; // Ahora opcional
-    apellidos?: string; // Ahora opcional
-    razonSocial?: string; // Nuevo campo
+    nombres?: string; 
+    apellidos?: string; 
+    razonSocial?: string; 
 
     idTipoDoc: number;
     numeroDocumento: string;

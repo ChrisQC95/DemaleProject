@@ -20,8 +20,7 @@
     <a href="javascript:void(0);" 
        class="nav-link" 
        [class.active]="activeTab === 'producto'"
-       (click)="selectTab('producto')">
-      Productos
+       [class.disabled]="!selectedClientForProductManagement" [attr.aria-disabled]="!selectedClientForProductManagement" (click)="selectTab('productos')"> Productos
     </a>
   </li>
 </ul>
@@ -43,44 +42,36 @@
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="ni ni-badge"></i></span>
                 </div>
-                <input class="form-control" 
-                      placeholder="DNI, RUC o nombre" 
-                      type="text" 
+                <input class="form-control"
+                      placeholder="DNI, RUC o nombre"
+                      type="text"
                       [(ngModel)]="searchQuery"
                       (keyup.enter)="onSearch()">
               </div>
             </div>
-            
+
             <button class="btn btn-primary btn-block" (click)="onSearch()">
               <i class="ni ni-zoom-split-in mr-2"></i> Buscar
             </button>
-            
-            <!-- Resultados -->
-            <div class="mt-4" *ngIf="clientResults.length > 0">
-              <h5 class="text-muted mb-3">Resultados:</h5>
-              <div class="list-group">
-                <a *ngFor="let client of clientResults" 
-                  class="list-group-item list-group-item-action flex-column align-items-start mb-2"
-                  (click)="onSelectClient(client)"
-                  [class.active]="selectedClient?.id === client.id">
-                  <div class="d-flex w-100 justify-content-between">
-                    <h5 class="mb-1">{{ client.nombreCompleto }}</h5>
-                    <span class="badge" [ngClass]="{
-                      'badge-success': client.esFrecuente,
-                      'badge-warning': !client.esFrecuente
-                    }">
-                      {{ client.esFrecuente ? 'Frecuente' : 'Nuevo' }}
-                    </span>
-                  </div>
-                  <p class="mb-1 text-sm">{{ client.tipoDocumento }}: {{ client.numeroDocumento }}</p>
-                  <small class="text-muted">{{ client.productosRegistrados || 0 }} productos registrados</small>
-                </a>
-              </div>
-            </div>
 
-            <!-- Mensaje cuando no hay resultados -->
-            <div *ngIf="searchPerformed && clientResults.length === 0" class="alert alert-info mt-3">
-              No se encontraron clientes con ese criterio.
+            <div class="mt-4">
+              <div *ngIf="searchPerformed && clientResults.length > 0">
+                <h5 class="text-muted mb-3">Resultados:</h5>
+                <div class="list-group">
+                  <a *ngFor="let client of clientResults"
+                    class="list-group-item list-group-item-action flex-column align-items-start mb-2"
+                    (click)="onSelectClient(client)"
+                    [class.active]="selectedClientForProductManagement?.idCliente === client.idCliente"> <div class="d-flex w-100 justify-content-between">
+                      <h5 class="mb-1">{{ client.nombreCompleto }}</h5>
+                      </div>
+                    <p class="mb-1 text-sm">{{ client.tipoDocumentoNombre }}: {{ client.numeroDocumento }}</p>
+                    </a>
+                </div>
+              </div>
+
+              <div *ngIf="searchPerformed && clientResults.length === 0" class="alert alert-info mt-3">
+                No se encontraron clientes con ese criterio.
+              </div>
             </div>
           </div>
         </div>
@@ -88,187 +79,179 @@
 
       <!-- Sección de Registro/Edición -->
       <div class="col-lg-6">
-        <div class="card shadow">
-            <div class="card-header bg-transparent border-0">
-                <h3 class="mb-0" [class.text-success]="!isEditMode" [class.text-primary]="isEditMode">
-                    <i class="ni ni-single-02 mr-2"></i>
-                    {{ isEditMode ? 'Confirmar Cliente' : 'Registrar Nuevo Cliente' }}
-                </h3>
-            </div>
-            <div class="card-body">
-                <form #clientForm="ngForm" (ngSubmit)="onSubmit()">
-                    <div class="form-row" *ngIf="showNaturalPersonFields">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-control-label">Nombres <span class="text-danger">*</span></label>
-                                <input class="form-control"
-                                      name="nombres"
-                                      [(ngModel)]="currentClient.nombres"
-                                      [required]="showNaturalPersonFields"> </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-control-label">Apellidos <span class="text-danger">*</span></label>
-                                <input class="form-control"
-                                      name="apellidos"
-                                      [(ngModel)]="currentClient.apellidos"
-                                      [required]="showNaturalPersonFields"> </div>
-                        </div>
-                    </div>
+          <div class="card shadow">
+              <div class="card-header bg-transparent border-0">
+                  <h3 class="mb-0 text-primary"> <i class="ni ni-single-02 mr-2"></i>
+                      Registrar Nuevo Cliente </h3>
+              </div>
+              <div class="card-body">
+                  <form #clientForm="ngForm" (ngSubmit)="onSubmit()">
+                      <div class="form-row" *ngIf="showNaturalPersonFields">
+                          <div class="col-md-6">
+                              <div class="form-group">
+                                  <label class="form-control-label">Nombres <span class="text-danger">*</span></label>
+                                  <input class="form-control"
+                                        name="nombres"
+                                        [(ngModel)]="currentClient.nombres"
+                                        [required]="showNaturalPersonFields">
+                              </div>
+                          </div>
+                          <div class="col-md-6">
+                              <div class="form-group">
+                                  <label class="form-control-label">Apellidos <span class="text-danger">*</span></label>
+                                  <input class="form-control"
+                                        name="apellidos"
+                                        [(ngModel)]="currentClient.apellidos"
+                                        [required]="showNaturalPersonFields">
+                              </div>
+                          </div>
+                      </div>
 
-                    <div class="form-row" *ngIf="showLegalPersonFields">
-                        <div class="col-md-12">
-                            <div class="form-group">
-                                <label class="form-control-label">Razón Social <span class="text-danger">*</span></label>
-                                <input class="form-control"
-                                      name="razonSocial"
-                                      [(ngModel)]="currentClient.razonSocial"
-                                      [required]="showLegalPersonFields"> </div>
-                        </div>
-                    </div>
+                      <div class="form-row" *ngIf="showLegalPersonFields">
+                          <div class="col-md-12">
+                              <div class="form-group">
+                                  <label class="form-control-label">Razón Social <span class="text-danger">*</span></label>
+                                  <input class="form-control"
+                                        name="razonSocial"
+                                        [(ngModel)]="currentClient.razonSocial"
+                                        [required]="showLegalPersonFields">
+                              </div>
+                          </div>
+                      </div>
 
-                    <div class="form-row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-control-label">Tipo de Documento <span class="text-danger">*</span></label>
-                                <select class="form-control"
-                                        name="tipoDocumento"
-                                        [(ngModel)]="currentClient.idTipoDoc"
-                                        (change)="onDocumentTypeChange()" required>
-                                    <option [ngValue]="undefined" disabled>Seleccionar...</option>
-                                    <option *ngFor="let td of tiposDocumento" [ngValue]="td.idTipoDoc">{{ td.nombreDoc }}</option>
-                                </select>
-                                <div *ngIf="clientForm.controls['tipoDocumento']?.invalid && clientForm.controls['tipoDocumento']?.touched" class="text-danger mt-1">
-                                    El tipo de documento es requerido.
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group"> <label for="tipoCliente" class="form-label">Tipo de Cliente <span class="text-danger">*</span></label>
-                                <select class="form-control" id="tipoCliente" name="idTipoCliente" [(ngModel)]="currentClient.idTipoCliente" required>
-                                    <option [ngValue]="undefined" disabled>Seleccione un tipo de cliente</option>
-                                    <option *ngFor="let tc of tiposCliente" [ngValue]="tc.idTipoCliente">{{ tc.tipoCliente }}</option>
-                                </select>
-                                <div *ngIf="clientForm.controls['idTipoCliente']?.invalid && clientForm.controls['idTipoCliente']?.touched" class="text-danger mt-1">
-                                    El tipo de cliente es requerido.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                      <div class="form-row">
+                          <div class="col-md-6">
+                              <div class="form-group">
+                                  <label class="form-control-label">Tipo de Documento <span class="text-danger">*</span></label>
+                                  <select class="form-control"
+                                          name="tipoDocumento"
+                                          [(ngModel)]="currentClient.idTipoDoc"
+                                          (change)="onDocumentTypeChange()" required>
+                                      <option [ngValue]="undefined" disabled>Seleccionar...</option>
+                                      <option *ngFor="let td of tiposDocumento" [ngValue]="td.idTipoDoc">{{ td.nombreDoc }}</option>
+                                  </select>
+                                  <div *ngIf="clientForm.controls['tipoDocumento']?.invalid && clientForm.controls['tipoDocumento']?.touched" class="text-danger mt-1">
+                                      El tipo de documento es requerido.
+                                  </div>
+                              </div>
+                          </div>
+                          <div class="col-md-6">
+                              <div class="form-group">
+                                  <label for="tipoCliente" class="form-label">Tipo de Cliente <span class="text-danger">*</span></label>
+                                  <select class="form-control" id="tipoCliente" name="idTipoCliente" [(ngModel)]="currentClient.idTipoCliente" required>
+                                      <option [ngValue]="undefined" disabled>Seleccione un tipo de cliente</option>
+                                      <option *ngFor="let tc of tiposCliente" [ngValue]="tc.idTipoCliente">{{ tc.tipoCliente }}</option>
+                                  </select>
+                                  <div *ngIf="clientForm.controls['idTipoCliente']?.invalid && clientForm.controls['idTipoCliente']?.touched" class="text-danger mt-1">
+                                      El tipo de cliente es requerido.
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
 
-                    <div class="form-group">
-                        <label class="form-control-label">Número de Documento</label>
-                        <div class="input-group">
-                            <input class="form-control"
-                                  name="numeroDocumento"
-                                  [(ngModel)]="currentClient.numeroDocumento"
-                                  (input)="clearDocumentLookupResults()"
-                                  #numeroDocumentoNgModel="ngModel" [minlength]="getMinLengthForDocumentType()"  [maxlength]="getMaxLengthForDocumentType()"  required
-                            >
-                            <div class="input-group-append">
-                                <button class="btn btn-outline-primary" type="button"
-                                        (click)="onLookupDocument()"
-                                        [disabled]="!currentClient.numeroDocumento || isLoadingDocument || numeroDocumentoNgModel.invalid">
-                                    <span *ngIf="isLoadingDocument" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                                    <i *ngIf="!isLoadingDocument" class="fas fa-search"></i>
-                                    <span *ngIf="!isLoadingDocument"> Consultar</span>
-                                </button>
-                            </div>
-                        </div>
-                        <div *ngIf="numeroDocumentoNgModel.invalid && (numeroDocumentoNgModel.dirty || numeroDocumentoNgModel.touched)" class="text-danger mt-1">
-                            <div *ngIf="numeroDocumentoNgModel.errors?.['required']">El número de documento es requerido.</div>
-                            <div *ngIf="numeroDocumentoNgModel.errors?.['minlength']">
-                                El número debe tener al menos {{ getMinLengthForDocumentType() }} dígitos para el tipo seleccionado.
-                            </div>
-                            <div *ngIf="numeroDocumentoNgModel.errors?.['maxlength']">
-                                El número no debe exceder {{ getMaxLengthForDocumentType() }} dígitos para el tipo seleccionado.
-                            </div>
-                        </div>
-                        <div *ngIf="documentLookupResult" class="mt-2">
-                            <div *ngIf="documentLookupResult.success" class="text-success small">
-                                <i class="fas fa-check-circle"></i> Datos obtenidos: {{ documentLookupResult.fullName }}
-                            </div>
-                            <div *ngIf="!documentLookupResult.success" class="text-danger small">
-                                <i class="fas fa-exclamation-circle"></i> {{ documentLookupResult.errorMessage }}
-                            </div>
-                        </div>
-                    </div>
+                      <div class="form-group">
+                          <label class="form-control-label">Número de Documento</label>
+                          <div class="input-group">
+                              <input class="form-control"
+                                    name="numeroDocumento"
+                                    [(ngModel)]="currentClient.numeroDocumento"
+                                    (input)="clearDocumentLookupResults()"
+                                    #numeroDocumentoNgModel="ngModel" [minlength]="getMinLengthForDocumentType()" [maxlength]="getMaxLengthForDocumentType()" required
+                              >
+                              <div class="input-group-append">
+                                  <button class="btn btn-outline-primary" type="button"
+                                          (click)="onLookupDocument()"
+                                          [disabled]="!currentClient.numeroDocumento || isLoadingDocument || numeroDocumentoNgModel.invalid || !currentClient.idTipoDoc"> <span *ngIf="isLoadingDocument" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                      <i *ngIf="!isLoadingDocument" class="fas fa-search"></i>
+                                      <span *ngIf="!isLoadingDocument"> Consultar</span>
+                                  </button>
+                              </div>
+                          </div>
+                          <div *ngIf="numeroDocumentoNgModel.invalid && (numeroDocumentoNgModel.dirty || numeroDocumentoNgModel.touched)" class="text-danger mt-1">
+                              <div *ngIf="numeroDocumentoNgModel.errors?.['required']">El número de documento es requerido.</div>
+                              <div *ngIf="numeroDocumentoNgModel.errors?.['minlength']">
+                                  El número debe tener al menos {{ getMinLengthForDocumentType() }} dígitos para el tipo seleccionado.
+                              </div>
+                              <div *ngIf="numeroDocumentoNgModel.errors?.['maxlength']">
+                                  El número no debe exceder {{ getMaxLengthForDocumentType() }} dígitos para el tipo seleccionado.
+                              </div>
+                          </div>
+                          <div *ngIf="documentLookupResult" class="mt-2">
+                              <div *ngIf="documentLookupResult.success" class="text-success small">
+                                  <i class="fas fa-check-circle"></i> Datos obtenidos: {{ documentLookupResult.fullName }}
+                              </div>
+                              <div *ngIf="!documentLookupResult.success" class="text-danger small">
+                                  <i class="fas fa-exclamation-circle"></i> {{ documentLookupResult.errorMessage }}
+                              </div>
+                          </div>
+                      </div>
 
-                    <div class="form-group">
-                        <label class="form-control-label">Teléfono</label>
-                        <input class="form-control"
-                                  name="telefono"
-                                  [(ngModel)]="currentClient.telefono"
-                                  type="tel">
-                    </div>
+                      <div class="form-group">
+                          <label class="form-control-label">Teléfono</label>
+                          <input class="form-control"
+                                name="telefono"
+                                [(ngModel)]="currentClient.telefono"
+                                type="tel">
+                      </div>
 
-                    <div class="form-group">
-                        <label class="form-control-label">Correo Electrónico</label>
-                        <input class="form-control"
-                                  name="email"
-                                  [(ngModel)]="currentClient.email"
-                                  type="email">
-                    </div>
+                      <div class="form-group">
+                          <label class="form-control-label">Correo Electrónico</label>
+                          <input class="form-control"
+                                name="email"
+                                [(ngModel)]="currentClient.email"
+                                type="email">
+                      </div>
 
-                    <div class="form-row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-control-label">Distrito</label>
-                                <select class="form-control"
-                                        name="idDistrito"
-                                        [(ngModel)]="currentClient.idDistrito">
-                                    <option [ngValue]="undefined">Seleccionar...</option>
-                                    <option *ngFor="let d of distritos" [ngValue]="d.idDistrito">{{ d.nombreDistrito }}</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-control-label">Tipo de Vía</label>
-                                <select class="form-control"
-                                        name="idTipoVia"
-                                        [(ngModel)]="currentClient.idTipoVia">
-                                    <option [ngValue]="undefined">Seleccionar...</option>
-                                    <option *ngFor="let tv of tiposVia" [ngValue]="tv.idTipoVia">{{ tv.nombreTipoVia }}</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-control-label">Dirección</label>
-                        <input class="form-control"
-                              name="direccion"
-                              [(ngModel)]="currentClient.direccion"
-                              type="text">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-control-label">N° Municipal</label>
-                        <input class="form-control"
-                              name="nMunicipal"
-                              [(ngModel)]="currentClient.nMunicipal"
-                              type="text">
-                    </div>
+                      <div class="form-row">
+                          <div class="col-md-6">
+                              <div class="form-group">
+                                  <label class="form-control-label">Distrito</label>
+                                  <select class="form-control"
+                                          name="idDistrito"
+                                          [(ngModel)]="currentClient.idDistrito">
+                                      <option [ngValue]="undefined">Seleccionar...</option>
+                                      <option *ngFor="let d of distritos" [ngValue]="d.idDistrito">{{ d.nombreDistrito }}</option>
+                                  </select>
+                              </div>
+                          </div>
+                          <div class="col-md-6">
+                              <div class="form-group">
+                                  <label class="form-control-label">Tipo de Vía</label>
+                                  <select class="form-control"
+                                          name="idTipoVia"
+                                          [(ngModel)]="currentClient.idTipoVia">
+                                      <option [ngValue]="undefined">Seleccionar...</option>
+                                      <option *ngFor="let tv of tiposVia" [ngValue]="tv.idTipoVia">{{ tv.nombreTipoVia }}</option>
+                                  </select>
+                              </div>
+                          </div>
+                      </div>
+                      <div class="form-group">
+                          <label class="form-control-label">Dirección</label>
+                          <input class="form-control"
+                                name="direccion"
+                                [(ngModel)]="currentClient.direccion"
+                                type="text">
+                      </div>
+                      <div class="form-group">
+                          <label class="form-control-label">N° Municipal</label>
+                          <input class="form-control"
+                                name="nMunicipal"
+                                [(ngModel)]="currentClient.nMunicipal"
+                                type="text">
+                      </div>
 
+                      <div class="text-center">
+                          <button type="submit"
+                                      class="btn btn-primary mt-4"> <i class="ni ni-check-bold mr-2"></i>
+                              Registrar Cliente </button>
 
-                    <div class="text-center">
-                        <button type="submit"
-                                    class="btn btn-success mt-4 mr-2"
-                                    [disabled]="!clientForm.valid">
-                            <i class="ni ni-check-bold mr-2"></i>
-                            {{ isEditMode ? 'Continuar' : 'Registrar' }}
-                        </button>
-
-                        <button *ngIf="isEditMode"
-                                    type="button"
-                                    class="btn btn-secondary mt-4"
-                                    (click)="onCancelEdit()">
-                            <i class="ni ni-fat-remove mr-2"></i> Cancelar
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+                          <button type="button" class="btn btn-secondary mt-4 ml-2" (click)="resetForm()">Limpiar Formulario</button>
+                      </div>
+                  </form>
+              </div>
+          </div>
+      </div>
     </div>
   </div>
   <div class="tab-pane fade" [ngClass]="{'show active': activeTab === 'producto'}">
@@ -359,121 +342,123 @@
 
 <!--MODAL-->
 <ng-template #productModal let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title">{{ isEditingProduct ? 'Editar Producto' : 'Registrar Nuevo Producto' }}</h5>
+    <button type="button" class="close" (click)="modal.dismiss('Cross click')" aria-label="Close">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <form #productForm="ngForm" (ngSubmit)="saveProduct()">
+      <div class="row">
+        <div class="col-md-6">
+          <div class="form-group">
+            <label>CATEGORÍA</label>
+            <select class="form-control"
+                    [(ngModel)]="currentProduct.idTipoProducto"
+                    name="idTipoProducto" required>
+              <option [ngValue]="null" disabled>Seleccione una categoría</option>
+              <option *ngFor="let tipo of tiposProducto" [ngValue]="tipo.idTipoProducto">
+                {{ tipo.tipoProducto }}
+              </option>
+            </select>
+          </div>
 
-      <div class="modal-header">
-        <h5 class="modal-title">{{ isEditingProduct ? 'Editar Producto' : 'Registrar Nuevo Producto' }}</h5>
-        <button type="button" class="close" (click)="modal.dismiss('Cross click')" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <form #productForm="ngForm">
-          <div class="row">
-            <!-- Columna Izquierda -->
-            <div class="col-md-6">
-              <div class="form-group">
-                <label>CATEGORÍA</label>
-                <select class="form-control" 
-                        [(ngModel)]="currentProduct.categoria" 
-                        name="categoria" required>
-                  <option [ngValue]="null" disabled>Ingrese una opción</option>
-                  <option *ngFor="let cat of categorias" [ngValue]="cat">
-                    {{ cat }}
-                  </option>
-                </select>
+          <div class="form-group">
+            <label>NOMBRE DEL PRODUCTO</label>
+            <input type="text" class="form-control"
+                   [(ngModel)]="currentProduct.nombre"
+                   name="nombre" required>
+          </div>
+
+          <div class="form-group">
+            <label>PUNTO DE ACOPIO</label>
+            <select class="form-control"
+                    [(ngModel)]="currentProduct.idPuntoAcopio"
+                    name="idPuntoAcopio" required>
+              <option [ngValue]="null" disabled>Seleccione un punto de acopio</option>
+              <option *ngFor="let punto of puntosAcopioList" [ngValue]="punto.idPuntoAcopio">
+                {{ punto.nombreAcopio }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>DISTRITO DE DESTINO</label>
+            <select class="form-control"
+                    [(ngModel)]="currentProduct.idDistrito"
+                    name="idDistrito" required>
+              <option [ngValue]="null" disabled>Seleccione un distrito</option>
+              <option *ngFor="let distrito of distritosDestino" [ngValue]="distrito.idDistrito">
+                {{ distrito.nombreDistrito  }}
+              </option>
+            </select>
+          </div>
+
+        </div>
+
+        <div class="col-md-6">
+          <div class="form-group">
+            <label>MEDIDAS (cm)</label>
+            <div class="row">
+              <div class="col-4">
+                <input type="number" class="form-control" step="0.01"
+                       [(ngModel)]="currentProduct.alto"
+                       name="alto" placeholder="ALTO" required>
               </div>
-              
-              <div class="form-group">
-                <label>NOMBRE DEL PRODUCTO</label>
-                <input type="text" class="form-control" 
-                       [(ngModel)]="currentProduct.nombre" 
-                       name="nombre" required>
+              <div class="col-4">
+                <input type="number" class="form-control" step="0.01"
+                       [(ngModel)]="currentProduct.largo"
+                       name="largo" placeholder="LARGO" required>
               </div>
-              
-              <div class="form-group">
-                <label>PUNTO DE ACOPIO</label>
-                <select class="form-control" 
-                        [(ngModel)]="currentProduct.puntoAcopio" 
-                        name="puntoAcopio" required>
-                  <option [ngValue]="null" disabled>Ingrese una opción</option>
-                  <option *ngFor="let punto of puntosAcopio" [ngValue]="punto">
-                    {{ punto }}
-                  </option>
-                </select>
-              </div>
-              
-              <div class="form-group">
-                <label>FECHA INGRESO</label>
-                <input type="date" class="form-control" 
-                       [(ngModel)]="currentProduct.fechaIngreso" 
-                       name="fechaIngreso" required>
-              </div>
-            </div>
-            
-            <!-- Columna Derecha -->
-            <div class="col-md-6">
-              <div class="form-group">
-                <label>MEDIDAS (cm)</label>
-                <div class="row">
-                  <div class="col-4">
-                    <input type="number" class="form-control" 
-                           [(ngModel)]="currentProduct.alto" 
-                           name="alto" placeholder="ALTO">
-                  </div>
-                  <div class="col-4">
-                    <input type="number" class="form-control" 
-                           [(ngModel)]="currentProduct.largo" 
-                           name="largo" placeholder="LARGO">
-                  </div>
-                  <div class="col-4">
-                    <input type="number" class="form-control" 
-                           [(ngModel)]="currentProduct.ancho" 
-                           name="ancho" placeholder="ANCHO">
-                  </div>
-                </div>
-              </div>
-              
-              <div class="form-group">
-                <label>PESO (kg)</label>
-                <input type="number" step="0.01" class="form-control" 
-                       [(ngModel)]="currentProduct.peso" 
-                       name="peso" required>
-              </div>
-              
-              <div class="form-group">
-                <label>ADJUNTAR GUÍA DE REMISIÓN</label>
-                <div class="custom-file">
-                  <input type="file" class="custom-file-input" 
-                         (change)="onFileSelected($event)" 
-                         id="customFile">
-                  <label class="custom-file-label" for="customFile">
-                    {{ currentProduct.guiaRemision?.name || 'Buscar archivo...' }}
-                  </label>
-                </div>
-              </div>
-              
-              <div class="form-group">
-                <label>EMPLEADO</label>
-                <select class="form-control" 
-                        [(ngModel)]="currentProduct.empleado" 
-                        name="empleado" required>
-                  <option [ngValue]="null" disabled>Seleccionar empleado</option>
-                  <option *ngFor="let emp of empleados" [ngValue]="emp">
-                    {{ emp }}
-                  </option>
-                </select>
+              <div class="col-4">
+                <input type="number" class="form-control" step="0.01"
+                       [(ngModel)]="currentProduct.ancho"
+                       name="ancho" placeholder="ANCHO" required>
               </div>
             </div>
           </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
-        <button type="button" class="btn btn-primary" 
-                (click)="saveProduct()" 
-                [disabled]="!productForm.valid">
-          {{ isEditingProduct ? 'Actualizar' : 'Registrar' }}
-        </button>
-      </div>
 
+          <div class="form-group">
+            <label>PESO (kg)</label>
+            <input type="number" step="0.01" class="form-control"
+                   [(ngModel)]="currentProduct.peso"
+                   name="peso" required>
+          </div>
+
+          <div class="form-group">
+            <label>ADJUNTAR GUÍA DE REMISIÓN</label>
+            <div class="custom-file">
+              <input type="file" class="custom-file-input"
+                     (change)="onFileSelected($event)"
+                     id="customFile" accept=".pdf,.jpg,.jpeg,.png">
+              <label class="custom-file-label" for="customFile" id="customFileLabel">
+                {{ currentProduct.guiaRemisionFile?.name || 'Buscar archivo...' }}
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>EMPLEADO (Atención al Cliente)</label>
+            <select class="form-control"
+                    [(ngModel)]="currentProduct.idTrabajador"
+                    name="idTrabajador" required>
+              <option [ngValue]="null" disabled>Seleccionar empleado</option>
+              <option *ngFor="let emp of trabajadoresList" [ngValue]="emp.idTrabajador">
+                {{ emp.nombreCompleto }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
+    <button type="submit" class="btn btn-primary"
+            (click)="saveProduct()"
+            [disabled]="!productForm.valid">
+      {{ isEditingProduct ? 'Actualizar' : 'Registrar' }}
+    </button>
+  </div>
 </ng-template>

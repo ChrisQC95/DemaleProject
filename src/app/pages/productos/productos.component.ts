@@ -1,48 +1,56 @@
 import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { DocumentService } from 'src/app/document.service'; 
+import { DocumentService } from 'src/app/document.service';
 import { DocumentLookupResponse } from 'src/app/interfaces/document-lookup-response.interface';
 
-import { ClienteService } from '../../services/cliente.service'; // Ajusta la ruta si es necesario
-import { ClienteRegistroRequest } from '../../interfaces/cliente-registro-request.interface'; // DTO para enviar al backend
+import { ClienteService } from '../../services/cliente.service';
+import { ClienteRegistroRequest } from '../../interfaces/cliente-registro-request.interface';
 import { ClienteResponse } from '../../interfaces/cliente-response.interface'; // DTO de respuesta del backend
 import { TipoDocumento } from '../../interfaces/tipo-documento.interface';
 import { TipoCliente } from '../../interfaces/tipo-cliente.interface';
-import { Distrito } from '../../interfaces/distrito.interface'; 
-import { TipoVia } from '../../interfaces/tipo-via.interface'; 
+import { Distrito } from '../../interfaces/distrito.interface';
+import { TipoVia } from '../../interfaces/tipo-via.interface';
+
+import { TipoProducto } from '../../interfaces/tipo-producto.interface'; // Importa el nuevo modelo
+import { PuntoAcopio } from '../../interfaces/punto-acopio.interface'; // Importa el nuevo modelo
+import { TrabajadorDropdown } from '../../interfaces/trabajador-dropdown.interface'; // Importa el nuevo modelo
+
+import { TipoProductoService } from '../../services/tipo-producto.service'; // Importa el nuevo servicio
+import { PuntoAcopioService } from '../../services/punto-acopio.service'; // Importa el nuevo servicio
+import { DistritoService } from '../../services/distrito.service';
+import { TrabajadorService } from '../../services/trabajador.service'; // Importa el nuevo servicio
+import { ProductoService } from '../../services/producto.service';
 
 interface ClienteForm {
   id?: number;
-  nombres?: string; // Hacer opcional
-  apellidos?: string; // Hacer opcional
-  razonSocial?: string; // Nuevo campo
-  idTipoDoc?: number; // Usar idTipoDoc en lugar de tipoDocumento (string)
+  nombres?: string;
+  apellidos?: string;
+  razonSocial?: string;
+  idTipoDoc?: number;
   numeroDocumento: string;
   telefono?: string;
-  email?: string; // Corresponde al 'correo' en tu DTO de Spring Boot
+  email?: string;
   idTipoCliente?: number;
-  idDistrito?: number; // Añadir campos de dirección
+  idDistrito?: number;
   idTipoVia?: number;
   direccion?: string;
   nMunicipal?: string;
 }
 interface Producto {
   id?: number;
-  codigo?: string;
   nombre: string;
-  categoria: string;
   peso: number;
   alto?: number;
   largo?: number;
   ancho?: number;
-  medidas?: string;
-  puntoAcopio: string;
-  destino: string;
-  estado: string;
-  fechaIngreso?: Date | string;
-  guiaRemision?: File | string;
-  empleado: string;
+  guiaRemisionFile?: File | null;
+  idTipoProducto: number | null; 
+  idPuntoAcopio: number | null; 
+  idCliente: number | null; 
+  idEstadoEnvio: number | null;
+  idDistrito: number | null; 
+  idTrabajador: number | null;
 }
 
 @Component({
@@ -53,67 +61,78 @@ interface Producto {
 
 export class ProductosComponent implements OnInit {
   activeTab: string = 'clientes';
-  
-  // Variables para pestaña Clientes
+
   searchQuery: string = '';
   clientResults: ClienteResponse[] = [];
-  selectedClient: ClienteForm | null = null;
   currentClient: ClienteForm = this.createEmptyClient();
-  isEditMode: boolean = false;
   searchPerformed: boolean = false;
+  selectedClientForProductManagement: ClienteResponse | null = null;
+
 
   tiposDocumento: TipoDocumento[] = [];
   tiposCliente: TipoCliente[] = [];
-  distritos: Distrito[] = []; 
-  tiposVia: TipoVia[] = []; 
+  distritos: Distrito[] = [];
+  tiposVia: TipoVia[] = [];
 
-  showNaturalPersonFields: boolean = true; // Por defecto, mostrar nombres y apellidos
-  showLegalPersonFields: boolean = false; // Por defecto, ocultar razón social
-
-  // <<--- CAMBIO: IDs para los tipos de documento (usados en la lógica) --->>
   readonly DNI_ID = 1;
   readonly RUC_ID = 2;
   readonly CARNET_EXTRANJERIA_ID = 5;
 
-  // <<--- CAMBIO: Nuevas variables de estado para la consulta de documento
   isLoadingDocument: boolean = false;
   documentLookupResult: DocumentLookupResponse | null = null;
 
-  // Variables para pestaña Productos
+  showNaturalPersonFields: boolean = true; // Por defecto, mostrar nombres y apellidos
+  showLegalPersonFields: boolean = false; // Por defecto, ocultar razón social
+
   @ViewChild('productModal') productModal!: TemplateRef<any>;
   productos: Producto[] = [];
   currentProduct: Producto = this.createEmptyProduct();
   isEditingProduct: boolean = false;
-  categorias = ['Electrónicos', 'Equipo Médico', 'Insumos', 'Materiales'];
-  puntosAcopio = ['Almacén Central', 'Centro de Distribución Norte', 'Centro de Distribución Sur'];
-  empleados = ['Juan Pérez', 'María Gómez', 'Carlos Sánchez'];
-  
-  // Paginación
+
+  tiposProducto: TipoProducto[] = []; 
+  puntosAcopioList: PuntoAcopio[] = [];
+  trabajadoresList: TrabajadorDropdown[] = [];
+  distritosDestino: Distrito[] = [];
+
   currentPage = 1;
   itemsPerPage = 10;
   totalItems = 0;
 
   constructor(
-    private http: HttpClient, 
-    private modalService: NgbModal, 
+    private http: HttpClient,
+    private modalService: NgbModal,
     private documentService: DocumentService,
-    private clienteService: ClienteService
+    private clienteService: ClienteService,
+    private tipoProductoService: TipoProductoService,
+    private puntoAcopioService: PuntoAcopioService,
+    private distritoService: DistritoService,
+    private trabajadorService: TrabajadorService,
+    private productoService: ProductoService
   ) {}
 
   ngOnInit(): void {
     this.loadTiposDocumento();
     this.loadTiposCliente();
-    this.loadDistritos(); 
+    this.loadDistritos();
     this.loadTiposVia();
     this.loadInitialData();
-    this.loadProducts();
-    this.selectTab('cliente');
+    this.loadProductDropdowns();
+    this.selectTab('cliente'); 
   }
+
   selectTab(tab: string): void {
+    if (tab === 'productos' && !this.selectedClientForProductManagement) {
+      console.warn('Debe seleccionar un cliente para acceder a la gestión de productos.');
+      return;
+    }
+    if (tab === 'cliente') {
+      this.selectedClientForProductManagement = null;
+    }
     this.activeTab = tab;
   }
+
   getMinLengthForDocumentType(): number {
-    switch (this.currentClient.idTipoDoc) { // Usar idTipoDoc
+    switch (this.currentClient.idTipoDoc) {
       case this.DNI_ID:
         return 8;
       case this.RUC_ID:
@@ -126,7 +145,7 @@ export class ProductosComponent implements OnInit {
   }
 
   getMaxLengthForDocumentType(): number {
-    switch (this.currentClient.idTipoDoc) { // Usar idTipoDoc
+    switch (this.currentClient.idTipoDoc) {
       case this.DNI_ID:
         return 8;
       case this.RUC_ID:
@@ -143,23 +162,24 @@ export class ProductosComponent implements OnInit {
     return {
       nombres: '',
       apellidos: '',
-      razonSocial: '', // <<--- CAMBIO: Inicializar razonSocial --->>
-      idTipoDoc: undefined, // <<--- CAMBIO: Usar idTipoDoc y undefined para el valor inicial del select --->>
+      razonSocial: '',
+      idTipoDoc: undefined,
       numeroDocumento: '',
       telefono: '',
       email: '',
-      idTipoCliente: undefined, // <<--- CAMBIO: Usar undefined para el valor inicial del select --->>
+      idTipoCliente: undefined,
       idDistrito: undefined,
       idTipoVia: undefined,
       direccion: '',
       nMunicipal: ''
     };
   }
+
   loadTiposDocumento(): void {
     this.clienteService.getTiposDocumento().subscribe({
       next: (data) => {
         this.tiposDocumento = data;
-        console.log('Tipos de Documento cargados:', this.tiposDocumento); // <--- AÑADIDO
+        console.log('Tipos de Documento cargados:', this.tiposDocumento);
       },
       error: (err) => console.error('Error al cargar tipos de documento:', err)
     });
@@ -169,7 +189,7 @@ export class ProductosComponent implements OnInit {
     this.clienteService.getTiposCliente().subscribe({
       next: (data) => {
         this.tiposCliente = data;
-        console.log('Tipos de Cliente cargados:', this.tiposCliente); // <--- AÑADIDO
+        console.log('Tipos de Cliente cargados:', this.tiposCliente);
       },
       error: (err) => console.error('Error al cargar tipos de cliente:', err)
     });
@@ -179,7 +199,7 @@ export class ProductosComponent implements OnInit {
     this.clienteService.getDistritos().subscribe({
       next: (data) => {
         this.distritos = data;
-        console.log('Distritos cargados:', this.distritos); // <--- AÑADIDO
+        console.log('Distritos cargados:', this.distritos);
       },
       error: (err) => console.error('Error al cargar distritos:', err)
     });
@@ -189,71 +209,49 @@ export class ProductosComponent implements OnInit {
     this.clienteService.getTiposVia().subscribe({
       next: (data) => {
         this.tiposVia = data;
-        console.log('Tipos de Vía cargados:', this.tiposVia); // <--- AÑADIDO
+        console.log('Tipos de Vía cargados:', this.tiposVia);
       },
       error: (err) => console.error('Error al cargar tipos de vía:', err)
     });
   }
+
   loadInitialData(): void {
-    this.clientResults = [];
-    // <<--- CAMBIO: Llamar a onDocumentTypeChange al cargar el formulario inicialmente --->>
-    this.onDocumentTypeChange(); // Para establecer la visibilidad inicial de los campos
-  }
-  /*loadInitialData(): void {
-    this.http.get<Cliente[]>('/api/clientes/frecuentes').subscribe({
-      next: (data) => this.clientResults = data,
-      error: (err) => console.error('Error al cargar clientes:', err)
-    });
-  }*/
-
-  onSearch(): void {
-    if (!this.searchQuery.trim()) return;
-    // Aquí deberías llamar a un endpoint de búsqueda en tu backend
-    /*
-    this.clienteService.buscarClientes(this.searchQuery).subscribe({
-      next: (data) => {
-        this.clientResults = data;
-        this.searchPerformed = true;
-      },
-      error: (err) => {
-        console.error('Error en búsqueda:', err);
-        this.clientResults = [];
-      }
-    });
-    */
-    this.clientResults = []; // Temporalmente vacío
-    this.searchPerformed = true;
-  }
-
-  onSelectClient(client: ClienteResponse): void {
-    this.selectedClient = {
-      id: client.idCliente,
-      nombres: client.nombres,
-      apellidos: client.apellidos,
-      razonSocial: client.razonSocial, // <<--- CAMBIO: Mapear razonSocial --->>
-      idTipoDoc: this.tiposDocumento.find(td => td.nombreDoc === client.tipoDocumentoNombre)?.idTipoDoc || undefined, // Mapear a ID numérico
-      numeroDocumento: client.numeroDocumento,
-      telefono: client.telefono,
-      email: client.correo,
-      idTipoCliente: client.idTipoCliente, // Asegurarse de que el ID del tipo de cliente se mapee
-      idDistrito: client.idDistrito, // Asegurarse de que los IDs de dirección se mapeen
-      idTipoVia: client.idTipoVia,
-      direccion: client.direccion,
-      nMunicipal: client.nMunicipal
-    };
-    this.currentClient = { ...this.selectedClient };
-    this.isEditMode = true;
-    // <<--- CAMBIO: Llamar a onDocumentTypeChange al seleccionar un cliente para ajustar la vista --->>
     this.onDocumentTypeChange();
   }
+
+  onSearch(): void {
+    if (!this.searchQuery.trim()) {
+      this.clientResults = [];
+      this.searchPerformed = false;
+      return;
+    }
+
+    this.searchPerformed = true;
+    this.clienteService.buscarClientes(this.searchQuery.trim()).subscribe({
+      next: (data) => {
+        this.clientResults = data;
+        console.log('Resultados de búsqueda:', this.clientResults);
+      },
+      error: (err) => {
+        console.error('Error al buscar clientes:', err);
+        this.clientResults = [];
+        alert('Error al buscar clientes: ' + (err.error?.message || err.message || 'Error desconocido.'));
+      }
+    });
+  }
+  onSelectClient(client: ClienteResponse): void {
+    console.log('Cliente seleccionado:', client);
+    this.selectedClientForProductManagement = client;
+    this.selectTab('producto');
+  }
+
   onDocumentTypeChange(): void {
     const selectedTypeId = this.currentClient.idTipoDoc;
 
-    // Reiniciar los campos de nombres/apellidos y razón social al cambiar el tipo
     this.currentClient.nombres = '';
     this.currentClient.apellidos = '';
     this.currentClient.razonSocial = '';
-    this.currentClient.numeroDocumento = ''; // También reiniciar el número de documento para evitar confusiones
+    this.currentClient.numeroDocumento = '';
 
     if (selectedTypeId === this.RUC_ID) {
       this.showNaturalPersonFields = false;
@@ -262,20 +260,15 @@ export class ProductosComponent implements OnInit {
       this.showNaturalPersonFields = true;
       this.showLegalPersonFields = false;
     } else {
-      // Para cualquier otro tipo, o si no se ha seleccionado nada, puedes decidir un comportamiento por defecto
-      // Por ejemplo, ocultar ambos o mostrar los campos de persona natural
-      this.showNaturalPersonFields = true; // Mostrar por defecto para otros tipos
+      this.showNaturalPersonFields = true;
       this.showLegalPersonFields = false;
     }
-    // También limpia el resultado de la consulta del documento anterior
     this.clearDocumentLookupResults();
   }
 
   onSubmit(): void {
-    // <<--- CAMBIO: Validaciones condicionales en el frontend --->>
     const idTipoDoc = this.currentClient.idTipoDoc;
 
-    // Validar nombres/apellidos O razonSocial
     if (idTipoDoc === this.DNI_ID || idTipoDoc === this.CARNET_EXTRANJERIA_ID) {
       if (!this.currentClient.nombres?.trim() || !this.currentClient.apellidos?.trim()) {
         alert('Para DNI/Carnet de Extranjería, Nombres y Apellidos son obligatorios.');
@@ -291,7 +284,6 @@ export class ProductosComponent implements OnInit {
       return;
     }
 
-    // Validaciones comunes
     if (!this.currentClient.idTipoDoc ||
       !this.currentClient.numeroDocumento?.trim() ||
       !this.currentClient.idTipoCliente
@@ -300,55 +292,41 @@ export class ProductosComponent implements OnInit {
       return;
     }
 
-    // Mapear ClienteForm a ClienteRegistroRequest para enviar al backend
     const clienteParaBackend: ClienteRegistroRequest = {
-      // Los campos nombres, apellidos, razonSocial se asignarán condicionalmente
-      nombres: (idTipoDoc === this.DNI_ID || idTipoDoc === this.CARNET_EXTRANJERIA_ID) ? this.currentClient.nombres || '' : undefined,
-      apellidos: (idTipoDoc === this.DNI_ID || idTipoDoc === this.CARNET_EXTRANJERIA_ID) ? this.currentClient.apellidos || '' : undefined,
-      razonSocial: (idTipoDoc === this.RUC_ID) ? this.currentClient.razonSocial || '' : undefined,
+      nombres: (idTipoDoc === this.DNI_ID || idTipoDoc === this.CARNET_EXTRANJERIA_ID) ? this.currentClient.nombres || null : null,
+      apellidos: (idTipoDoc === this.DNI_ID || idTipoDoc === this.CARNET_EXTRANJERIA_ID) ? this.currentClient.apellidos || null : null,
+      razonSocial: (idTipoDoc === this.RUC_ID) ? this.currentClient.razonSocial || null : null,
 
       idTipoDoc: this.currentClient.idTipoDoc,
       numeroDocumento: this.currentClient.numeroDocumento,
-      telefono: this.currentClient.telefono || undefined,
-      correo: this.currentClient.email || undefined,
+      telefono: this.currentClient.telefono || null,
+      correo: this.currentClient.email || null,
 
-      idDistrito: this.currentClient.idDistrito || undefined,
-      idTipoVia: this.currentClient.idTipoVia || undefined,
-      direccion: this.currentClient.direccion || undefined,
-      nMunicipal: this.currentClient.nMunicipal || undefined,
+      idDistrito: this.currentClient.idDistrito || null,
+      idTipoVia: this.currentClient.idTipoVia || null,
+      direccion: this.currentClient.direccion || null,
+      nMunicipal: this.currentClient.nMunicipal || null,
 
       idTipoCliente: this.currentClient.idTipoCliente
     };
 
-    if (this.isEditMode) {
-      console.warn('La funcionalidad de edición/actualización de clientes aún no está implementada completamente.');
-      alert('Funcionalidad de edición no implementada. Por favor, registre un nuevo cliente.');
-    } else {
       this.clienteService.registrarCliente(clienteParaBackend).subscribe({
         next: (response) => {
           console.log('Cliente registrado con éxito:', response);
           alert('Cliente registrado con éxito!');
           this.resetForm();
-          this.loadInitialData();
+          this.onSearch();
         },
         error: (err) => {
           console.error('Error al registrar cliente:', err);
           alert('Error al registrar cliente: ' + (err.error?.message || err.message || 'Error desconocido.'));
         }
       });
-    }
   }
 
-  onCancelEdit(): void {
-    this.resetForm();
-  }
-
-  private resetForm(): void {
+  public resetForm(): void {
     this.currentClient = this.createEmptyClient();
-    this.isEditMode = false;
-    this.selectedClient = null;
     this.clearDocumentLookupResults();
-    // <<--- CAMBIO: Volver a llamar a onDocumentTypeChange para resetear la visibilidad --->>
     this.onDocumentTypeChange();
   }
 
@@ -366,7 +344,7 @@ export class ProductosComponent implements OnInit {
     }
 
     this.isLoadingDocument = true;
-    this.documentLookupResult = null; // Limpiar resultados anteriores
+    this.documentLookupResult = null;
 
     this.documentService.consultarDocumento(numero).subscribe({
       next: (response: DocumentLookupResponse) => {
@@ -374,34 +352,40 @@ export class ProductosComponent implements OnInit {
         this.isLoadingDocument = false;
 
         if (response.success) {
-          // Rellenar campos del formulario
-          this.currentClient.numeroDocumento = response.number; // Asegurar que el número consultado se mantenga
+          this.currentClient.numeroDocumento = response.number;
 
           if (response.type === 'RUC') {
-              this.currentClient.razonSocial = response.fullName || '';
-              this.currentClient.nombres = ''; // Limpiar nombres y apellidos
+            this.currentClient.razonSocial = response.fullName || '';
+            this.currentClient.nombres = '';
+            this.currentClient.apellidos = '';
+            this.currentClient.idTipoDoc = this.RUC_ID;
+          } else if (response.type === 'DNI' && response.fullName) {
+            // Separar nombres y apellidos
+            const parts = response.fullName.trim().split(/\s+/);
+            if (parts.length >= 4) {
+              this.currentClient.nombres = parts.slice(0, 2).join(' ');
+              this.currentClient.apellidos = parts.slice(2, 4).join(' ');
+            } else if (parts.length === 3) {
+              this.currentClient.nombres = parts[0];
+              this.currentClient.apellidos = parts.slice(1).join(' ');
+            } else {
+              this.currentClient.nombres = response.fullName;
               this.currentClient.apellidos = '';
-              this.currentClient.idTipoDoc = this.RUC_ID; // Asignar el ID de RUC
-          } else if (response.type === 'DNI') {
-              this.currentClient.nombres = response.fullName || '';
-              this.currentClient.apellidos = response.otherInfo || ''; // Asumiendo que otherInfo tiene apellidos para DNI
-              this.currentClient.razonSocial = ''; // Limpiar razón social
-              this.currentClient.idTipoDoc = this.DNI_ID; // Asignar el ID de DNI
-          } else if (response.type === 'CEE') { // Asumiendo que la API devuelve 'CEE' para Carnet de Extranjería
-              this.currentClient.nombres = response.fullName || '';
-              this.currentClient.apellidos = response.otherInfo || '';
-              this.currentClient.razonSocial = '';
-              this.currentClient.idTipoDoc = this.CARNET_EXTRANJERIA_ID; // Asignar el ID de Carnet Extranjería
+            }
+            this.currentClient.razonSocial = '';
+            this.currentClient.idTipoDoc = this.DNI_ID;
+          } else if (response.type === 'CEE' || response.type === 'CARNET_EXTRANJERIA') {
+            this.currentClient.nombres = response.fullName || '';
+            this.currentClient.apellidos = response.otherInfo || '';
+            this.currentClient.razonSocial = '';
+            this.currentClient.idTipoDoc = this.CARNET_EXTRANJERIA_ID;
           } else {
-              // Si el tipo de documento retornado por la API no coincide con DNI/RUC/CEE
-              console.warn(`Tipo de documento desconocido retornado por la API: ${response.type}`);
-              this.currentClient.razonSocial = '';
-              this.currentClient.nombres = '';
-              this.currentClient.apellidos = '';
-              // Mantener el idTipoDoc que el usuario seleccionó o establecer un valor por defecto si es necesario
+            console.warn(`Tipo de documento desconocido retornado por la API: ${response.type}`);
+            this.currentClient.razonSocial = '';
+            this.currentClient.nombres = '';
+            this.currentClient.apellidos = '';
           }
-          // <<--- IMPORTANTE: Llamar a onDocumentTypeChange para que se actualice la vista después de rellenar los datos --->>
-          this.onDocumentTypeChange();
+          //this.onDocumentTypeChange();
         }
       },
       error: (err) => {
@@ -425,40 +409,82 @@ export class ProductosComponent implements OnInit {
   private createEmptyProduct(): Producto {
     return {
       nombre: '',
-      categoria: '',
       peso: 0,
-      puntoAcopio: '',
-      destino: '',
-      estado: 'EN_ALMACEN',
-      empleado: ''
+      alto: undefined,
+      largo: undefined,
+      ancho: undefined,
+      guiaRemisionFile: null,
+      idTipoProducto: null,
+      idPuntoAcopio: null,
+      idCliente: null, 
+      idEstadoEnvio: null,
+      idDistrito: null, 
+      idTrabajador: null
     };
   }
 
-  loadProducts(): void {
-    // Carga productos desde el backend, usando HttpClient o un ProductService
-    this.productos = []; 
-    this.totalItems = 0;
-  }
-  /*loadProducts(): void {
-    const params = {
-      page: this.currentPage.toString(),
-      limit: this.itemsPerPage.toString()
-    };
-
-    this.http.get<any>('/api/productos', { params }).subscribe({
-      next: (response) => {
-        this.productos = response.data;
-        this.totalItems = response.total;
-      },
-      error: (err) => console.error('Error al cargar productos:', err)
+  loadProductDropdowns(): void {
+    this.tipoProductoService.getTiposProducto().subscribe(data => {
+      this.tiposProducto = data;
+      console.log('Tipos de Producto cargados para dropdown:', this.tiposProducto);
+    }, error => {
+      console.error('Error al cargar tipos de producto para dropdown:', error);
     });
-  }*/
+
+    this.puntoAcopioService.getPuntosAcopio().subscribe(data => {
+      this.puntosAcopioList = data;
+      console.log('Puntos de Acopio cargados para dropdown:', this.puntosAcopioList);
+    }, error => {
+      console.error('Error al cargar puntos de acopio para dropdown:', error);
+    });
+
+    this.trabajadorService.getTrabajadoresAtencionCliente().subscribe(data => {
+      this.trabajadoresList = data;
+      console.log('Trabajadores (Atención al Cliente) cargados para dropdown:', this.trabajadoresList);
+    }, error => {
+      console.error('Error al cargar trabajadores para dropdown:', error);
+    });
+
+    this.distritoService.getAllDistritos().subscribe({
+      next: (data) => {
+        this.distritosDestino = data;
+        console.log('Distritos cargados:', this.distritosDestino);
+      },
+      error: (error) => {
+        console.error('Error al cargar distritos:', error);
+      }
+    });
+  }
+
+  loadProductsForClient(idCliente: number | undefined): void {
+    if (idCliente) {
+      this.productoService.getProductosByCliente(idCliente).subscribe({
+        next: (data) => {
+          this.productos = data;
+          this.totalItems = data.length;
+          console.log(`Productos cargados para cliente ${idCliente}:`, this.productos);
+        },
+        error: (err) => {
+          console.error(`Error al cargar productos para cliente ${idCliente}:`, err);
+          this.productos = [];
+          this.totalItems = 0;
+        }
+      });
+    } else {
+      this.productos = [];
+      this.totalItems = 0;
+    }
+  }
 
   openProductModal(producto?: Producto): void {
+    if (!this.selectedClientForProductManagement) {
+      alert('Por favor, seleccione un cliente primero para gestionar sus productos.');
+      return;
+    }
     this.isEditingProduct = !!producto;
     this.currentProduct = producto ? { ...producto } : this.createEmptyProduct();
-    
-    this.modalService.open(this.productModal, { 
+
+    this.modalService.open(this.productModal, {
       size: 'lg',
       backdrop: 'static'
     }).result.then(
@@ -470,35 +496,78 @@ export class ProductosComponent implements OnInit {
   onFileSelected(event: any): void {
     const file: File = event.target.files[0];
     if (file) {
-      this.currentProduct.guiaRemision = file;
+      this.currentProduct.guiaRemisionFile = file;
+      const fileName = file.name;
+      const label = document.getElementById('customFileLabel');
+      if (label) {
+        label.innerText = fileName;
+      }
+    } else {
+      this.currentProduct.guiaRemisionFile = null;
+      const label = document.getElementById('customFileLabel');
+      if (label) {
+        label.innerText = 'Buscar archivo...';
+      }
     }
   }
 
   saveProduct(): void {
-    console.warn('La funcionalidad de guardar/actualizar producto aún no está conectada al backend.');
-    this.modalService.dismissAll();
-  }
-  /*saveProduct(): void {
+    if (!this.selectedClientForProductManagement || !this.selectedClientForProductManagement.idCliente) {
+      alert('Error: No hay un cliente seleccionado para registrar el producto.');
+      return;
+    }
+
+    if (this.currentProduct.idTipoProducto === null ||
+        this.currentProduct.idPuntoAcopio === null ||
+        this.currentProduct.idTrabajador === null ||
+        this.currentProduct.idDistrito === null ||
+        !this.currentProduct.nombre || 
+        this.currentProduct.peso === null ||
+        this.currentProduct.peso <= 0 ||
+        this.currentProduct.alto === null ||
+        this.currentProduct.alto <= 0 ||
+        this.currentProduct.largo === null ||
+        this.currentProduct.largo <= 0 ||
+        this.currentProduct.ancho === null ||
+        this.currentProduct.ancho <= 0
+        ) {
+      alert('Por favor, complete todos los campos obligatorios del producto.');
+      return;
+    }
+
+
     const formData = new FormData();
-    Object.keys(this.currentProduct).forEach(key => {
-      const value = this.currentProduct[key as keyof Producto];
-      if (value !== null && value !== undefined) {
-        formData.append(key, value instanceof File ? value : String(value));
-      }
-    });
+    // Añadir todos los campos del formulario al FormData
+    formData.append('producto', this.currentProduct.nombre);
+    formData.append('alto', this.currentProduct.alto!.toString());
+    formData.append('ancho', this.currentProduct.ancho!.toString());
+    formData.append('largo', this.currentProduct.largo!.toString());
+    formData.append('peso', this.currentProduct.peso!.toString());
+    formData.append('idPuntoAcopio', this.currentProduct.idPuntoAcopio!.toString());
+    formData.append('idTipoProducto', this.currentProduct.idTipoProducto!.toString());
+    formData.append('idCliente', this.currentProduct.idCliente!.toString());
+    formData.append('idEstadoEnvio', '1');
+    formData.append('idDistrito', this.currentProduct.idDistrito!.toString());
+    formData.append('idTrabajador', this.currentProduct.idTrabajador!.toString());
 
-    const apiCall = this.isEditingProduct
-      ? this.http.put(`/api/productos/${this.currentProduct.id}`, formData)
-      : this.http.post('/api/productos', formData);
+    if (this.currentProduct.guiaRemisionFile) {
+      formData.append('guiaRemisionFile', this.currentProduct.guiaRemisionFile, this.currentProduct.guiaRemisionFile.name);
+    }
 
-    apiCall.subscribe({
-      next: () => {
-        this.loadProducts();
-        this.modalService.dismissAll();
-      },
-      error: (err) => console.error('Error al guardar producto:', err)
-    });
-  }*/
+      this.productoService.registrarProducto(formData).subscribe({
+        next: (response) => {
+          console.log('Producto registrado exitosamente:', response);
+          alert('Producto registrado exitosamente!');
+          this.modalService.dismissAll(); // Cierra el modal
+          this.resetProductForm(); // Limpia el formulario
+          this.loadProductsForClient(this.selectedClientForProductManagement!.idCliente); // Recarga la lista de productos
+        },
+        error: (err) => {
+          console.error('Error al registrar producto:', err);
+          alert('Error al registrar producto: ' + (err.error?.message || err.message || 'Error desconocido.'));
+        }
+      });
+  }
 
   editProduct(producto: Producto): void {
     this.openProductModal(producto);
@@ -506,20 +575,20 @@ export class ProductosComponent implements OnInit {
 
   confirmDelete(id: number): void {
     if (confirm('¿Está seguro de eliminar este producto?')) {
-      console.warn('La funcionalidad de eliminar producto aún no está conectada al backend.');
-    }
-  }
-  /*confirmDelete(id: number): void {
-    if (confirm('¿Está seguro de eliminar este producto?')) {
-      this.http.delete(`/api/productos/${id}`).subscribe({
-        next: () => this.loadProducts(),
-        error: (err) => console.error('Error al eliminar:', err)
+      this.productoService.deleteProduct(id).subscribe({
+        next: () => {
+          alert('Producto eliminado correctamente.');
+          this.loadProductsForClient(this.selectedClientForProductManagement!.idCliente); // Recarga la lista
+        },
+        error: (err) => {
+          console.error('Error al eliminar producto:', err);
+          alert('Error al eliminar producto: ' + (err.error?.message || err.message || 'Error desconocido.'));
+        }
       });
     }
-  }*/
+  }
 
   viewDetails(producto: Producto): void {
-    // Implementar según necesidades
     console.log('Detalles del producto:', producto);
   }
 
@@ -535,13 +604,13 @@ export class ProductosComponent implements OnInit {
   resetProductForm(): void {
     this.currentProduct = this.createEmptyProduct();
     this.isEditingProduct = false;
+    const label = document.getElementById('customFileLabel');
+    if (label) {
+      label.innerText = 'Buscar archivo...';
+    }
   }
 
-  // Método para generar medidas automáticamente
   updateMedidas(): void {
-    if (this.currentProduct.alto && this.currentProduct.largo && this.currentProduct.ancho) {
-      this.currentProduct.medidas = 
-        `${this.currentProduct.alto}x${this.currentProduct.largo}x${this.currentProduct.ancho} cm`;
-    }
+   
   }
 }
