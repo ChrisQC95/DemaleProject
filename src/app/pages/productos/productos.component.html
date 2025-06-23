@@ -367,8 +367,8 @@
           <div class="form-group">
             <label>NOMBRE DEL PRODUCTO</label>
             <input type="text" class="form-control"
-                   [(ngModel)]="currentProduct.nombre"
-                   name="nombre" required>
+                   [(ngModel)]="currentProduct.producto"
+                   name="producto" required>
           </div>
 
           <div class="form-group">
@@ -390,7 +390,7 @@
                     name="idDistrito" required>
               <option [ngValue]="null" disabled>Seleccione un distrito</option>
               <option *ngFor="let distrito of distritosDestino" [ngValue]="distrito.idDistrito">
-                {{ distrito.nombreDistrito  }}
+                {{ distrito.nombreDistrito }}
               </option>
             </select>
           </div>
@@ -404,18 +404,15 @@
               <div class="col-4">
                 <input type="number" class="form-control" step="0.01"
                        [(ngModel)]="currentProduct.alto"
-                       name="alto" placeholder="ALTO" required>
-              </div>
+                       name="alto" placeholder="ALTO" required min="0.01"> </div>
               <div class="col-4">
                 <input type="number" class="form-control" step="0.01"
                        [(ngModel)]="currentProduct.largo"
-                       name="largo" placeholder="LARGO" required>
-              </div>
+                       name="largo" placeholder="LARGO" required min="0.01"> </div>
               <div class="col-4">
                 <input type="number" class="form-control" step="0.01"
                        [(ngModel)]="currentProduct.ancho"
-                       name="ancho" placeholder="ANCHO" required>
-              </div>
+                       name="ancho" placeholder="ANCHO" required min="0.01"> </div>
             </div>
           </div>
 
@@ -423,16 +420,17 @@
             <label>PESO (kg)</label>
             <input type="number" step="0.01" class="form-control"
                    [(ngModel)]="currentProduct.peso"
-                   name="peso" required>
-          </div>
+                   name="peso" required min="0.01"> </div>
 
           <div class="form-group">
-            <label>ADJUNTAR GUÍA DE REMISIÓN</label>
+            <label>ADJUNTAR GUÍA DE REMISIÓN
+              <span *ngIf="selectedClientForProductManagement && selectedClientForProductManagement.idTipoCliente === ID_TIPO_CLIENTE_EMPRESA" class="text-danger ml-2">(Obligatorio)</span>
+            </label>
             <div class="custom-file">
               <input type="file" class="custom-file-input"
                      (change)="onFileSelected($event)"
-                     id="customFile" accept=".pdf,.jpg,.jpeg,.png">
-              <label class="custom-file-label" for="customFile" id="customFileLabel">
+                     id="customFile" accept=".pdf,.jpg,.jpeg,.png"
+                     [required]="selectedClientForProductManagement && selectedClientForProductManagement.idTipoCliente === ID_TIPO_CLIENTE_EMPRESA"> <label class="custom-file-label" for="customFile" id="customFileLabel">
                 {{ currentProduct.guiaRemisionFile?.name || 'Buscar archivo...' }}
               </label>
             </div>

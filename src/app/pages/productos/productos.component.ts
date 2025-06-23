@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { DocumentService } from 'src/app/document.service';
 import { DocumentLookupResponse } from 'src/app/interfaces/document-lookup-response.interface';
-
+import { Observable } from 'rxjs';
 import { ClienteService } from '../../services/cliente.service';
 import { ClienteRegistroRequest } from '../../interfaces/cliente-registro-request.interface';
 import { ClienteResponse } from '../../interfaces/cliente-response.interface'; // DTO de respuesta del backend
@@ -12,6 +12,8 @@ import { TipoCliente } from '../../interfaces/tipo-cliente.interface';
 import { Distrito } from '../../interfaces/distrito.interface';
 import { TipoVia } from '../../interfaces/tipo-via.interface';
 
+import { ProductoRegistroRequest } from 'src/app/interfaces/producto-registro-request.interface';
+import { ProductoResponse } from 'src/app/interfaces/producto-response.interface';
 import { TipoProducto } from '../../interfaces/tipo-producto.interface'; // Importa el nuevo modelo
 import { PuntoAcopio } from '../../interfaces/punto-acopio.interface'; // Importa el nuevo modelo
 import { TrabajadorDropdown } from '../../interfaces/trabajador-dropdown.interface'; // Importa el nuevo modelo
@@ -39,7 +41,7 @@ interface ClienteForm {
 }
 interface Producto {
   id?: number;
-  nombre: string;
+  producto: string;
   peso: number;
   alto?: number;
   largo?: number;
@@ -77,6 +79,9 @@ export class ProductosComponent implements OnInit {
   readonly DNI_ID = 1;
   readonly RUC_ID = 2;
   readonly CARNET_EXTRANJERIA_ID = 5;
+
+  readonly ID_TIPO_CLIENTE_EMPRESA = 2;
+  readonly ESTADO_ENVIO_EN_ALMACEN_ID = 1;
 
   isLoadingDocument: boolean = false;
   documentLookupResult: DocumentLookupResponse | null = null;
@@ -408,7 +413,7 @@ export class ProductosComponent implements OnInit {
   // ========== MÉTODOS PARA PRODUCTOS ==========
   private createEmptyProduct(): Producto {
     return {
-      nombre: '',
+      producto: '',
       peso: 0,
       alto: undefined,
       largo: undefined,
@@ -484,6 +489,9 @@ export class ProductosComponent implements OnInit {
     this.isEditingProduct = !!producto;
     this.currentProduct = producto ? { ...producto } : this.createEmptyProduct();
 
+    if (!this.isEditingProduct && this.selectedClientForProductManagement) {
+      this.currentProduct.idCliente = this.selectedClientForProductManagement.idCliente;
+    }
     this.modalService.open(this.productModal, {
       size: 'lg',
       backdrop: 'static'
@@ -512,61 +520,102 @@ export class ProductosComponent implements OnInit {
   }
 
   saveProduct(): void {
+    // --- Paso 1: Validaciones previas ---
     if (!this.selectedClientForProductManagement || !this.selectedClientForProductManagement.idCliente) {
       alert('Error: No hay un cliente seleccionado para registrar el producto.');
       return;
     }
 
+    // Validar que los campos obligatorios del producto no estén nulos/vacíos o <= 0
     if (this.currentProduct.idTipoProducto === null ||
         this.currentProduct.idPuntoAcopio === null ||
         this.currentProduct.idTrabajador === null ||
         this.currentProduct.idDistrito === null ||
-        !this.currentProduct.nombre || 
-        this.currentProduct.peso === null ||
-        this.currentProduct.peso <= 0 ||
-        this.currentProduct.alto === null ||
-        this.currentProduct.alto <= 0 ||
-        this.currentProduct.largo === null ||
-        this.currentProduct.largo <= 0 ||
-        this.currentProduct.ancho === null ||
-        this.currentProduct.ancho <= 0
-        ) {
-      alert('Por favor, complete todos los campos obligatorios del producto.');
+        !this.currentProduct.producto ||
+        this.currentProduct.peso === null || this.currentProduct.peso <= 0 ||
+        this.currentProduct.alto === null || this.currentProduct.alto <= 0 ||
+        this.currentProduct.largo === null || this.currentProduct.largo <= 0 ||
+        this.currentProduct.ancho === null || this.currentProduct.ancho <= 0
+    ) {
+      console.log('Validación de producto fallida. Valores actuales de currentProduct:', this.currentProduct);
+      console.log('Estado de campos individuales:');
+      console.log('  idTipoProducto:', this.currentProduct.idTipoProducto);
+      console.log('  idPuntoAcopio:', this.currentProduct.idPuntoAcopio);
+      console.log('  idTrabajador:', this.currentProduct.idTrabajador);
+      console.log('  idDistrito:', this.currentProduct.idDistrito);
+      console.log('  nombre (producto):', this.currentProduct.producto); // Confirming 'nombre'
+      console.log('  peso:', this.currentProduct.peso, ' (valido:', !(this.currentProduct.peso === null || this.currentProduct.peso <= 0), ')');
+      console.log('  alto:', this.currentProduct.alto, ' (valido:', !(this.currentProduct.alto === null || this.currentProduct.alto <= 0), ')');
+      console.log('  largo:', this.currentProduct.largo, ' (valido:', !(this.currentProduct.largo === null || this.currentProduct.largo <= 0), ')');
+      console.log('  ancho:', this.currentProduct.ancho, ' (valido:', !(this.currentProduct.ancho === null || this.currentProduct.ancho <= 0), ')');
+      alert('Por favor, complete todos los campos obligatorios del producto y asegure que las medidas y el peso sean mayores a cero.');
       return;
     }
 
+    // --- Paso 2: Lógica de validación de Guía de Remisión ---
+    const isEmpresaCliente = this.selectedClientForProductManagement.idTipoCliente === this.ID_TIPO_CLIENTE_EMPRESA;
 
-    const formData = new FormData();
-    // Añadir todos los campos del formulario al FormData
-    formData.append('producto', this.currentProduct.nombre);
-    formData.append('alto', this.currentProduct.alto!.toString());
-    formData.append('ancho', this.currentProduct.ancho!.toString());
-    formData.append('largo', this.currentProduct.largo!.toString());
-    formData.append('peso', this.currentProduct.peso!.toString());
-    formData.append('idPuntoAcopio', this.currentProduct.idPuntoAcopio!.toString());
-    formData.append('idTipoProducto', this.currentProduct.idTipoProducto!.toString());
-    formData.append('idCliente', this.currentProduct.idCliente!.toString());
-    formData.append('idEstadoEnvio', '1');
-    formData.append('idDistrito', this.currentProduct.idDistrito!.toString());
-    formData.append('idTrabajador', this.currentProduct.idTrabajador!.toString());
-
-    if (this.currentProduct.guiaRemisionFile) {
-      formData.append('guiaRemisionFile', this.currentProduct.guiaRemisionFile, this.currentProduct.guiaRemisionFile.name);
+    if (isEmpresaCliente && !this.currentProduct.guiaRemisionFile) {
+      alert('Para clientes de tipo Empresa/RUC, la guía de remisión es obligatoria.');
+      return; // Detener el envío si la validación falla
     }
 
-      this.productoService.registrarProducto(formData).subscribe({
-        next: (response) => {
-          console.log('Producto registrado exitosamente:', response);
-          alert('Producto registrado exitosamente!');
-          this.modalService.dismissAll(); // Cierra el modal
-          this.resetProductForm(); // Limpia el formulario
-          this.loadProductsForClient(this.selectedClientForProductManagement!.idCliente); // Recarga la lista de productos
-        },
-        error: (err) => {
-          console.error('Error al registrar producto:', err);
-          alert('Error al registrar producto: ' + (err.error?.message || err.message || 'Error desconocido.'));
+    // --- Paso 3: Preparación de datos comunes para ambos endpoints ---
+    // (Usa el ProductoRegistroRequest DTO para consistencia con el backend, aunque se use FormData)
+    const productDataForBackend: ProductoRegistroRequest = {
+      producto: this.currentProduct.producto,
+      alto: this.currentProduct.alto!,
+      ancho: this.currentProduct.ancho!,
+      largo: this.currentProduct.largo!,
+      peso: this.currentProduct.peso!,
+      idPuntoAcopio: this.currentProduct.idPuntoAcopio!,
+      idTipoProducto: this.currentProduct.idTipoProducto!,
+      idCliente: this.currentProduct.idCliente!, // Ya inyectado desde openProductModal
+      idEstadoEnvio: this.ESTADO_ENVIO_EN_ALMACEN_ID, // Valor estático
+      idDistrito: this.currentProduct.idDistrito!,
+      idTrabajador: this.currentProduct.idTrabajador!
+    };
+
+    // --- Paso 4: Decidir qué endpoint llamar y cómo enviar los datos ---
+    let observable: Observable<ProductoResponse>;
+
+    // Si hay un archivo de guía de remisión, se usa el endpoint que acepta FormData
+    if (this.currentProduct.guiaRemisionFile) {
+      const formData = new FormData();
+      const productoDataJson = JSON.stringify(productDataForBackend);
+      formData.append('productoData', productoDataJson);
+      formData.append('guiaRemisionFile', this.currentProduct.guiaRemisionFile, this.currentProduct.guiaRemisionFile.name);
+      // Añadir todos los campos del DTO al FormData
+      
+
+      observable = this.productoService.registrarProductoConGuia(formData);
+    } else {
+      // Si NO hay archivo de guía de remisión, se usa el endpoint que acepta JSON
+      observable = this.productoService.registrarProductoSinGuia(productDataForBackend);
+    }
+
+    // --- Paso 5: Suscribirse al observable y manejar la respuesta ---
+    observable.subscribe({
+      next: (response) => {
+        console.log('Producto registrado exitosamente:', response);
+        alert('Producto registrado exitosamente!');
+        this.modalService.dismissAll(); // Cierra el modal
+        this.resetProductForm(); // Limpia el formulario
+        // Recarga la lista de productos para el cliente actual
+        this.loadProductsForClient(this.selectedClientForProductManagement!.idCliente);
+      },
+      error: (err) => {
+        console.error('Error al registrar producto:', err);
+        // Manejo de errores más específico
+        let errorMessage = 'Ocurrió un error al registrar el producto.';
+        if (err.error && err.error.message) {
+          errorMessage = 'Error: ' + err.error.message;
+        } else if (err.message) {
+          errorMessage = 'Error: ' + err.message;
         }
-      });
+        alert(errorMessage);
+      }
+    });
   }
 
   editProduct(producto: Producto): void {

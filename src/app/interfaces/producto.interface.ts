@@ -1,6 +1,6 @@
 export interface Producto {
   id?: number;
-  nombre: string;
+  producto: string;
   alto?: number;
   largo?: number;
   ancho?: number;
