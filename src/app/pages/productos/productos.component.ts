@@ -47,6 +47,7 @@ interface Producto {
   largo?: number;
   ancho?: number;
   guiaRemisionFile?: File | null;
+  guiaRemisionBase64?: string | null;
   idTipoProducto: number | null; 
   idPuntoAcopio: number | null; 
   idCliente: number | null; 
@@ -63,7 +64,8 @@ interface Producto {
 
 export class ProductosComponent implements OnInit {
   activeTab: string = 'clientes';
-
+  //Producto[] = []; // O Producto[] = []; si tienes el tipo definido
+  //totalItems: number = 0;
   searchQuery: string = '';
   clientResults: ClienteResponse[] = [];
   currentClient: ClienteForm = this.createEmptyClient();
@@ -90,7 +92,8 @@ export class ProductosComponent implements OnInit {
   showLegalPersonFields: boolean = false; // Por defecto, ocultar razón social
 
   @ViewChild('productModal') productModal!: TemplateRef<any>;
-  productos: Producto[] = [];
+  //productos: Producto[] = [];
+  productos: ProductoResponse[] = []; // Cambiado a ProductoResponse para manejar la respuesta del backend
   currentProduct: Producto = this.createEmptyProduct();
   isEditingProduct: boolean = false;
 
@@ -126,14 +129,27 @@ export class ProductosComponent implements OnInit {
   }
 
   selectTab(tab: string): void {
-    if (tab === 'productos' && !this.selectedClientForProductManagement) {
-      console.warn('Debe seleccionar un cliente para acceder a la gestión de productos.');
-      return;
+    console.log('Intentando cambiar a la pestaña:', tab); // Para depuración
+
+    if (tab === 'producto') {
+      if (!this.selectedClientForProductManagement || !this.selectedClientForProductManagement.idCliente) {
+        console.warn('Debe seleccionar un cliente para acceder a la gestión de productos (ID no disponible).');
+        // Opcional: Podrías mantener la pestaña actual o redirigir a 'clientes'
+        // this.activeTab = 'clientes';
+        return; // Detiene la función si no hay cliente seleccionado
+      }
+      // Si hay un cliente seleccionado, activa la pestaña y carga los productos
+      this.activeTab = tab;
+      console.log('Cliente seleccionado, cargando productos para ID:', this.selectedClientForProductManagement.idCliente); // Para depuración
+      this.loadProductsForClientAndStatus(this.selectedClientForProductManagement.idCliente);
+    } else if (tab === 'clientes') {
+      this.selectedClientForProductManagement = null; // Deselecciona el cliente
+      this.productos = []; // Limpia la lista de productos al volver a clientes
+      this.activeTab = tab; // Activa la pestaña de clientes
+    } else {
+        // Para cualquier otra pestaña que puedas tener en el futuro
+        this.activeTab = tab;
     }
-    if (tab === 'cliente') {
-      this.selectedClientForProductManagement = null;
-    }
-    this.activeTab = tab;
   }
 
   getMinLengthForDocumentType(): number {
@@ -160,6 +176,16 @@ export class ProductosComponent implements OnInit {
       default:
         return 15;
     }
+  }
+  getMedidas(producto: ProductoResponse): string {
+    // Asegúrate de que las propiedades alto, ancho, largo existan y sean números
+    if (producto.alto !== null && producto.alto !== undefined &&
+        producto.ancho !== null && producto.ancho !== undefined &&
+        producto.largo !== null && producto.largo !== undefined) {
+      // Puedes ajustar el formato y las unidades según lo necesites
+      return `${producto.alto}x${producto.ancho}x${producto.largo} cm`;
+    }
+    return '--'; // Si faltan datos, muestra un guion o mensaje
   }
   // ========== MÉTODOS PARA CLIENTES ==========
 
@@ -246,6 +272,7 @@ export class ProductosComponent implements OnInit {
   }
   onSelectClient(client: ClienteResponse): void {
     console.log('Cliente seleccionado:', client);
+    console.log('ID del cliente seleccionado:', client.idCliente);
     this.selectedClientForProductManagement = client;
     this.selectTab('producto');
   }
@@ -480,26 +507,87 @@ export class ProductosComponent implements OnInit {
       this.totalItems = 0;
     }
   }
-
-  openProductModal(producto?: Producto): void {
-    if (!this.selectedClientForProductManagement) {
-      alert('Por favor, seleccione un cliente primero para gestionar sus productos.');
-      return;
+  loadProductsForClientAndStatus(idCliente: number | undefined): void {
+    console.log('Iniciando carga de productos "En Almacén" para idCliente:', idCliente);
+    this.productos = [];
+    this.totalItems = 0;
+    if (idCliente) {
+      this.productoService.listarProductosPorClienteYEnAlmacen(idCliente).subscribe({
+        next: (data) => {
+          this.productos = data;
+          this.totalItems = data.length;
+          console.log(`Productos "En Almacén" cargados para cliente ${idCliente}:`, this.productos);
+          if (this.productos.length === 0) {
+            console.log('La lista de productos recibida está vacía.');
+          }
+        },
+        error: (err) => {
+          console.error(`Error al cargar productos "En Almacén" para cliente ${idCliente}:`, err);
+          this.productos = [];
+          this.totalItems = 0;
+          alert('Error al cargar productos "En Almacén" para el cliente: ' + (err.error?.message || err.message || 'Error desconocido.'));
+        },
+        complete: () => {
+          console.log('Carga de productos completada.');
+        }
+      });
+    } else {
+      console.warn('No se proporcionó un idCliente para cargar productos.');
+      this.productos = [];
+      this.totalItems = 0;
     }
-    this.isEditingProduct = !!producto;
-    this.currentProduct = producto ? { ...producto } : this.createEmptyProduct();
-
-    if (!this.isEditingProduct && this.selectedClientForProductManagement) {
-      this.currentProduct.idCliente = this.selectedClientForProductManagement.idCliente;
-    }
-    this.modalService.open(this.productModal, {
-      size: 'lg',
-      backdrop: 'static'
-    }).result.then(
-      () => this.resetProductForm(),
-      () => this.resetProductForm()
-    );
   }
+
+  openProductModal(producto?: ProductoResponse): void {
+  if (!this.selectedClientForProductManagement) {
+    alert('Por favor, seleccione un cliente primero para gestionar sus productos.');
+    return;
+  }
+  this.isEditingProduct = !!producto; // Se establece en true si se proporciona 'producto'
+
+  if (this.isEditingProduct && producto) {
+    // Al editar, mapeamos ProductoResponse a la interfaz Producto del formulario
+    this.currentProduct = {
+      id: producto.idProducto, // El ID es crucial para la edición
+      producto: producto.producto,
+      peso: producto.peso,
+      alto: producto.alto,
+      largo: producto.largo,
+      ancho: producto.ancho,
+      guiaRemisionFile: null, // No precargamos el campo de archivo, es para nuevas subidas
+      //guiaRemisionBase64: producto.guiaRemisionBase64 || null, // Almacena el base64 existente
+      idTipoProducto: producto.idTipoProducto,
+      idPuntoAcopio: producto.idPuntoAcopio,
+      idCliente: producto.idCliente, 
+      idEstadoEnvio: producto.idEstadoEnvio,
+      idDistrito: producto.idDistrito, 
+      idTrabajador: producto.idTrabajador,
+      // Convierte las fechas a formato 'YYYY-MM-DD' si son cadenas de fecha
+      //fechIngreso: producto.fechIngreso ? new Date(producto.fechIngreso).toISOString().substring(0, 10) : undefined,
+      //fechLlegada: producto.fechLlegada ? new Date(producto.fechLlegada).toISOString().substring(0, 10) : undefined
+    };
+    // La etiqueta HTML se actualizará dinámicamente según guiaRemisionBase64
+    // No necesitas la actualización explícita de la etiqueta aquí para 'guia de remision cargada'.
+    // La lógica condicional del HTML en el paso 1 lo manejará.
+
+  } else {
+    // Al crear un nuevo producto
+    this.currentProduct = this.createEmptyProduct();
+  }
+
+  // Asegura que idCliente se establezca para nuevos productos, o se mantenga para los editados.
+  if (!this.isEditingProduct && this.selectedClientForProductManagement) {
+    this.currentProduct.idCliente = this.selectedClientForProductManagement.idCliente;
+  }
+  
+  this.modalService.open(this.productModal, {
+    size: 'lg',
+    backdrop: 'static'
+  }).result.then(
+    () => this.resetProductForm(),
+    () => this.resetProductForm()
+  );
+}
 
   onFileSelected(event: any): void {
     const file: File = event.target.files[0];
@@ -618,7 +706,7 @@ export class ProductosComponent implements OnInit {
     });
   }
 
-  editProduct(producto: Producto): void {
+  editProduct(producto: ProductoResponse): void {
     this.openProductModal(producto);
   }
 

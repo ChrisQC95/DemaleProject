@@ -26,12 +26,20 @@ export class ProductoService {
   }
 
   // Tu método existente para obtener productos por cliente
-  getProductosByCliente(idCliente: number): Observable<Producto[]> {
-    return this.http.get<Producto[]>(`${this.baseUrl}/cliente/${idCliente}`);
+  getProductosByCliente(idCliente: number): Observable<ProductoResponse[]> {
+    return this.http.get<ProductoResponse[]>(`${this.baseUrl}/cliente/${idCliente}`);
+  }
+  // Tu método existente para obtener productos por cliente y en almacén
+  listarProductosPorClienteYEnAlmacen(idCliente: number): Observable<ProductoResponse[]> {
+    return this.http.get<ProductoResponse[]>(`${this.baseUrl}/cliente/${idCliente}/en-almacen`);
   }
 
   // Tu método existente para eliminar producto
   deleteProduct(idProducto: number): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/${idProducto}`);
+    return this.http.delete(`${this.baseUrl}/${idProducto}`,{ responseType: 'text' });
+  }
+  actualizarProducto(idProducto: number, productoData: Producto): Observable<ProductoResponse> {
+    // El backend espera un PUT en /api/productos/{id}
+    return this.http.put<ProductoResponse>(`${this.baseUrl}/${idProducto}`, productoData);
   }
 }
