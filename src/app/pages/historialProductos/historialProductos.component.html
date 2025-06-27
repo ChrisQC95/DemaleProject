@@ -1,7 +1,6 @@
 <div class="header custom-header pb-8 pt-5 pt-md-8">
   <div class="container-fluid">
-    <div class="header-body">
-      </div>
+    <div class="header-body"></div>
   </div>
 </div>
 
@@ -12,38 +11,53 @@
         <div class="card-header border-0">
           <div class="row align-items-center">
             <div class="col">
-              <h3 class="mb-0">Historial de Compras</h3>
+              <h3 class="mb-0">Historial de Productos</h3>
             </div>
-            </div>
+          </div>
         </div>
-        
+
         <div class="card-body pt-0 pb-3">
           <div class="row">
+            <!-- Busqueda -->
             <div class="col-md-6 col-lg-4 mb-3">
               <div class="input-group input-group-alternative">
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="fas fa-search"></i></span>
                 </div>
-                <input class="form-control form-control-alternative" placeholder="Buscar Productos" type="text">
+                <input class="form-control form-control-alternative"
+                       placeholder="Buscar Productos"
+                       type="text"
+                       [(ngModel)]="filtroBusqueda"
+                       (input)="aplicarFiltros()">
               </div>
             </div>
+              <!-- Filtro Punto de Acopio -->
             <div class="col-md-3 col-lg-2 mb-3">
-              <select class="form-control form-control-alternative">
-                <option value="">Filtro</option>
-                <option value="categoria">Categoría</option>
-                <option value="cliente">Cliente</option>
-                </select>
+              <select class="form-control form-control-alternative"
+                      [(ngModel)]="filtroAcopio"
+                      (ngModelChange)="filtroAcopio = $event === '' ? '' : +$event; aplicarFiltros()">
+                <option value="">Puntos de acopio</option>
+                <option *ngFor="let acopio of puntosAcopio" [value]="acopio.id">{{ acopio.nombre }}</option>
+              </select>
             </div>
+
+            <!-- Filtro Estado -->
             <div class="col-md-3 col-lg-2 mb-3">
-              <select class="form-control form-control-alternative">
+              <select class="form-control form-control-alternative"
+                      [(ngModel)]="filtroEstado"
+                      (ngModelChange)="filtroEstado = $event === '' ? '' : +$event; aplicarFiltros()">
                 <option value="">Estados</option>
-                <option value="completado">Completado</option>
-                <option value="pendiente">Pendiente</option>
-                <option value="cancelado">Cancelado</option>
-                </select>
+                <option *ngFor="let estado of estadosEnvio" [value]="estado.id">{{ estado.nombre }}</option>
+              </select>
+            </div>
+            <div class="col-md-3 col-lg-2 mb-3 d-flex align-items-end">
+              <button class="btn btn-limpiar-filtros btn-block" (click)="limpiarFiltros()">
+                Limpiar filtros
+              </button>
             </div>
           </div>
         </div>
+
         <div class="table-responsive">
           <table class="table align-items-center table-flush">
             <thead class="thead-light">
@@ -57,19 +71,78 @@
                 <th scope="col">Estado</th>
                 <th scope="col">Chofer</th>
                 <th scope="col">Vehículo</th>
-                <th scope="col"></th> </tr>
+                <th scope="col"></th>
+              </tr>
             </thead>
             <tbody>
-              <tr *ngIf="true"> 
+              <tr *ngIf="historialFiltrado.length === 0">
                 <td colspan="11" class="text-center py-4">
                   <div class="alert alert-info mb-0">
-                    No hay historial de compras para mostrar.
+                    {{
+                      filtroAcopio
+                        ? 'No hay datos de acopio en ' + filtroAcopio
+                        : filtroEstado
+                          ? 'No hay productos con estado ' + filtroEstado
+                          : filtroBusqueda
+                            ? 'No se encontraron resultados para tu búsqueda'
+                            : 'No hay historial de productos para mostrar.'
+                    }}
                   </div>
                 </td>
+              </tr>
+
+              <tr *ngFor="let item of datosPaginados">
+                <td>{{ item.clienteNombreCompleto }}</td>
+                <td>{{ item.producto }}</td>
+                <td>{{ item.tipoProductoNombre }}</td>
+                <td>{{ item.fechIngreso }}</td>
+                <td>{{ item.puntoAcopioNombre }}</td>
+                <td>{{ item.distritoDestinoNombre }}</td>
+                <td>{{ item.estadoEnvioNombre }}</td>
+                <td>{{ item.trabajadorNombre }}</td>
+                <td>{{ item.vehiculo || '-' }}</td>
+                <td></td>
               </tr>
             </tbody>
           </table>
         </div>
+        <!-- Paginación -->
+        <div class="card-footer py-4">
+          <nav aria-label="...">
+            <ul class="pagination justify-content-end mb-0">
+              <li class="page-item" [class.disabled]="pageIndex === 0">
+                <a class="page-link" (click)="primeraPagina()">
+                  <i class="fas fa-angle-double-left"></i>
+                </a>
+              </li>
+              <li class="page-item" [class.disabled]="pageIndex === 0">
+                <a class="page-link" (click)="anteriorPagina()">
+                  <i class="fas fa-angle-left"></i>
+                </a>
+              </li>
+
+              <li class="page-item"
+                  *ngFor="let pagina of getPageNumbers()"
+                  [class.active]="pagina === pageIndex + 1">
+                <a class="page-link" (click)="irAPagina(pagina)">
+                  {{ pagina }}
+                </a>
+              </li>
+
+              <li class="page-item" [class.disabled]="(pageIndex + 1) * pageSize >= totalRegistros">
+                <a class="page-link" (click)="siguientePagina()">
+                  <i class="fas fa-angle-right"></i>
+                </a>
+              </li>
+              <li class="page-item" [class.disabled]="(pageIndex + 1) * pageSize >= totalRegistros">
+                <a class="page-link" (click)="ultimaPagina()">
+                  <i class="fas fa-angle-double-right"></i>
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+
       </div>
     </div>
   </div>

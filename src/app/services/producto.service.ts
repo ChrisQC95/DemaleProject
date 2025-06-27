@@ -3,16 +3,41 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ProductoRegistroRequest } from '../interfaces/producto-registro-request.interface';
 import { ProductoResponse } from '../interfaces/producto-response.interface';
-
 import { Producto } from '../interfaces/producto.interface'; // Si la interfaz Producto está en el mismo componente
+
 // O si creaste un archivo src/app/interfaces/producto.interface.ts:
 // import { Producto } from '../interfaces/producto.interface';
+export interface HistorialProducto {
+  idProducto: number;
+  producto: string;
+  alto: number;
+  ancho: number;
+  largo: number;
+  peso: number;
+  fechIngreso: string;
+  fechLlegada: string | null;
+  puntoAcopioNombre: string;
+  tipoProductoNombre: string;
+  clienteNombreCompleto: string;
+  estadoEnvioNombre: string;
+  distritoDestinoNombre: string;
+  trabajadorNombre: string;
+  idPuntoAcopio: number;
+  idTipoProducto: number;
+  idCliente: number;
+  idEstadoEnvio: number;
+  idDistrito: number;
+  idTrabajador: number;
+  guiaRemisionBase64: string | null;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductoService {
   private baseUrl = 'http://localhost:8080/api/productos'; // URL base para tus endpoints de productos
+  private acopioUrl = 'http://localhost:8080/api/puntos-acopio'; // URL base para tus puntos de acopio
+  private estadosUrl = 'http://localhost:8080/api/estados-envio'; // URL base para tus estados de envío
 
   constructor(private http: HttpClient) { }
 
@@ -34,4 +59,34 @@ export class ProductoService {
   deleteProduct(idProducto: number): Observable<any> {
     return this.http.delete(`${this.baseUrl}/${idProducto}`);
   }
+
+  listarProductos(): Observable<ProductoResponse[]> {
+  return this.http.get<ProductoResponse[]>(`${this.baseUrl}`);
+  }
+
+  obtenerHistorial(): Observable<HistorialProducto[]> {
+    // Asumiendo que el endpoint para obtener el historial es GET /productos/historial
+    return this.http.get<HistorialProducto[]>(`${this.baseUrl}/historial`);
+  }
+  obtenerHistorialPorEstado(idEstado: number): Observable<HistorialProducto[]> {
+    return this.http.get<HistorialProducto[]>(`${this.baseUrl}/historial/estado-envio/${idEstado}`);
+  }
+
+  obtenerHistorialPorPuntoAcopio(idPunto: number): Observable<HistorialProducto[]> {
+    return this.http.get<HistorialProducto[]>(`${this.baseUrl}/historial/punto-acopio/${idPunto}`);
+  }
+
+  obtenerHistorialFiltrado(idPunto: number, idEstado: number): Observable<HistorialProducto[]> {
+    return this.http.get<HistorialProducto[]>(
+      `${this.baseUrl}/historial/filtro?idPuntoAcopio=${idPunto}&idEstadoEnvio=${idEstado}`
+    );
+  }
+
+  getPuntosAcopio(): Observable<any[]> {
+  return this.http.get<any[]>('http://localhost:8080/api/puntos-acopio');
+}
+
+getEstadosEnvio(): Observable<any[]> {
+  return this.http.get<any[]>('http://localhost:8080/api/estados-envio');
+}
 }

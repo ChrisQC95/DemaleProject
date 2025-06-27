@@ -14,6 +14,8 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { AppRoutingModule } from './app.routing';
 import { ComponentsModule } from './components/components.module';
 import { ProductosComponent } from './pages/productos/productos.component';
+import { historialComponent } from './pages/historialProductos/historialProductos.component';
+import { EnviosProductosComponent } from './pages/enviosProductos/enviosProductos.component';
 
 
 @NgModule({
@@ -31,7 +33,9 @@ import { ProductosComponent } from './pages/productos/productos.component';
     AppComponent,
     AdminLayoutComponent,
     AuthLayoutComponent,
-    ProductosComponent
+    ProductosComponent,
+    historialComponent,
+    EnviosProductosComponent
   ],
   providers: [],
   bootstrap: [AppComponent]
