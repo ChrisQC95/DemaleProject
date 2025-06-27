@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ProductoRegistroRequest } from '../interfaces/producto-registro-request.interface';
 import { ProductoResponse } from '../interfaces/producto-response.interface';
-
+import { ProductoUpdateRequest } from '../interfaces/producto-update-request.interface'; // Asegúrate de que esta ruta sea correcta
 import { Producto } from '../interfaces/producto.interface'; // Si la interfaz Producto está en el mismo componente
 // O si creaste un archivo src/app/interfaces/producto.interface.ts:
 // import { Producto } from '../interfaces/producto.interface';
@@ -38,8 +38,7 @@ export class ProductoService {
   deleteProduct(idProducto: number): Observable<any> {
     return this.http.delete(`${this.baseUrl}/${idProducto}`,{ responseType: 'text' });
   }
-  actualizarProducto(idProducto: number, productoData: Producto): Observable<ProductoResponse> {
-    // El backend espera un PUT en /api/productos/{id}
-    return this.http.put<ProductoResponse>(`${this.baseUrl}/${idProducto}`, productoData);
-  }
+  actualizarProducto(idProducto: number, productoData: ProductoUpdateRequest): Observable<ProductoResponse> {
+  return this.http.put<ProductoResponse>(`${this.baseUrl}/${idProducto}`, productoData);
+}
 }

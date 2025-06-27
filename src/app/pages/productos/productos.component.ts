@@ -614,42 +614,59 @@ export class ProductosComponent implements OnInit {
       return;
     }
 
-    // Validar que los campos obligatorios del producto no estén nulos/vacíos o <= 0
-    if (this.currentProduct.idTipoProducto === null ||
-        this.currentProduct.idPuntoAcopio === null ||
-        this.currentProduct.idTrabajador === null ||
-        this.currentProduct.idDistrito === null ||
-        !this.currentProduct.producto ||
-        this.currentProduct.peso === null || this.currentProduct.peso <= 0 ||
-        this.currentProduct.alto === null || this.currentProduct.alto <= 0 ||
-        this.currentProduct.largo === null || this.currentProduct.largo <= 0 ||
-        this.currentProduct.ancho === null || this.currentProduct.ancho <= 0
+    // Validar campos obligatorios
+    if (
+      this.currentProduct.idTipoProducto === null ||
+      this.currentProduct.idPuntoAcopio === null ||
+      this.currentProduct.idTrabajador === null ||
+      this.currentProduct.idDistrito === null ||
+      !this.currentProduct.producto ||
+      this.currentProduct.peso === null || this.currentProduct.peso <= 0 ||
+      this.currentProduct.alto === null || this.currentProduct.alto <= 0 ||
+      this.currentProduct.largo === null || this.currentProduct.largo <= 0 ||
+      this.currentProduct.ancho === null || this.currentProduct.ancho <= 0
     ) {
-      console.log('Validación de producto fallida. Valores actuales de currentProduct:', this.currentProduct);
-      console.log('Estado de campos individuales:');
-      console.log('  idTipoProducto:', this.currentProduct.idTipoProducto);
-      console.log('  idPuntoAcopio:', this.currentProduct.idPuntoAcopio);
-      console.log('  idTrabajador:', this.currentProduct.idTrabajador);
-      console.log('  idDistrito:', this.currentProduct.idDistrito);
-      console.log('  nombre (producto):', this.currentProduct.producto); // Confirming 'nombre'
-      console.log('  peso:', this.currentProduct.peso, ' (valido:', !(this.currentProduct.peso === null || this.currentProduct.peso <= 0), ')');
-      console.log('  alto:', this.currentProduct.alto, ' (valido:', !(this.currentProduct.alto === null || this.currentProduct.alto <= 0), ')');
-      console.log('  largo:', this.currentProduct.largo, ' (valido:', !(this.currentProduct.largo === null || this.currentProduct.largo <= 0), ')');
-      console.log('  ancho:', this.currentProduct.ancho, ' (valido:', !(this.currentProduct.ancho === null || this.currentProduct.ancho <= 0), ')');
       alert('Por favor, complete todos los campos obligatorios del producto y asegure que las medidas y el peso sean mayores a cero.');
       return;
     }
 
-    // --- Paso 2: Lógica de validación de Guía de Remisión ---
-    const isEmpresaCliente = this.selectedClientForProductManagement.idTipoCliente === this.ID_TIPO_CLIENTE_EMPRESA;
+    // --- EDICIÓN ---
+    if (this.isEditingProduct && this.currentProduct.id) {
+      // Construye el objeto con relaciones anidadas
+      const productoActualizado = {
+        idProducto: this.currentProduct.id,
+        producto: this.currentProduct.producto,
+        alto: this.currentProduct.alto,
+        ancho: this.currentProduct.ancho,
+        largo: this.currentProduct.largo,
+        peso: this.currentProduct.peso,
+        fechIngreso: new Date().toISOString().substring(0, 10), // O la fecha original si la tienes
+        puntoAcopio: { idPuntoAcopio: this.currentProduct.idPuntoAcopio },
+        tipoProducto: { idTipoProducto: this.currentProduct.idTipoProducto },
+        cliente: { idCliente: this.currentProduct.idCliente },
+        estadoEnvio: { idEstadoEnvio: this.currentProduct.idEstadoEnvio },
+        distrito: { idDistrito: this.currentProduct.idDistrito },
+        trabajador: { idTrabajador: this.currentProduct.idTrabajador },
+        guiaRemision: null // O el valor correspondiente si manejas archivo
+      };
 
-    if (isEmpresaCliente && !this.currentProduct.guiaRemisionFile) {
-      alert('Para clientes de tipo Empresa/RUC, la guía de remisión es obligatoria.');
-      return; // Detener el envío si la validación falla
+      this.productoService.actualizarProducto(this.currentProduct.id, productoActualizado).subscribe({
+        next: (response) => {
+          alert('Producto actualizado exitosamente!');
+          this.modalService.dismissAll();
+          this.resetProductForm();
+          this.loadProductsForClient(this.selectedClientForProductManagement!.idCliente);
+        },
+        error: (err) => {
+          alert('Error al actualizar producto: ' + (err.error?.message || err.message || 'Error desconocido.'));
+          console.error('Error detalle:', err);
+        }
+      });
+      return;
     }
 
-    // --- Paso 3: Preparación de datos comunes para ambos endpoints ---
-    // (Usa el ProductoRegistroRequest DTO para consistencia con el backend, aunque se use FormData)
+    // --- REGISTRO NUEVO ---
+    // (Tu lógica actual para registrar, no la cambies)
     const productDataForBackend: ProductoRegistroRequest = {
       producto: this.currentProduct.producto,
       alto: this.currentProduct.alto!,
@@ -658,43 +675,32 @@ export class ProductosComponent implements OnInit {
       peso: this.currentProduct.peso!,
       idPuntoAcopio: this.currentProduct.idPuntoAcopio!,
       idTipoProducto: this.currentProduct.idTipoProducto!,
-      idCliente: this.currentProduct.idCliente!, // Ya inyectado desde openProductModal
-      idEstadoEnvio: this.ESTADO_ENVIO_EN_ALMACEN_ID, // Valor estático
+      idCliente: this.currentProduct.idCliente!,
+      idEstadoEnvio: this.ESTADO_ENVIO_EN_ALMACEN_ID,
       idDistrito: this.currentProduct.idDistrito!,
       idTrabajador: this.currentProduct.idTrabajador!
     };
 
-    // --- Paso 4: Decidir qué endpoint llamar y cómo enviar los datos ---
     let observable: Observable<ProductoResponse>;
 
-    // Si hay un archivo de guía de remisión, se usa el endpoint que acepta FormData
     if (this.currentProduct.guiaRemisionFile) {
       const formData = new FormData();
       const productoDataJson = JSON.stringify(productDataForBackend);
       formData.append('productoData', productoDataJson);
       formData.append('guiaRemisionFile', this.currentProduct.guiaRemisionFile, this.currentProduct.guiaRemisionFile.name);
-      // Añadir todos los campos del DTO al FormData
-      
-
       observable = this.productoService.registrarProductoConGuia(formData);
     } else {
-      // Si NO hay archivo de guía de remisión, se usa el endpoint que acepta JSON
       observable = this.productoService.registrarProductoSinGuia(productDataForBackend);
     }
 
-    // --- Paso 5: Suscribirse al observable y manejar la respuesta ---
     observable.subscribe({
       next: (response) => {
-        console.log('Producto registrado exitosamente:', response);
         alert('Producto registrado exitosamente!');
-        this.modalService.dismissAll(); // Cierra el modal
-        this.resetProductForm(); // Limpia el formulario
-        // Recarga la lista de productos para el cliente actual
+        this.modalService.dismissAll();
+        this.resetProductForm();
         this.loadProductsForClient(this.selectedClientForProductManagement!.idCliente);
       },
       error: (err) => {
-        console.error('Error al registrar producto:', err);
-        // Manejo de errores más específico
         let errorMessage = 'Ocurrió un error al registrar el producto.';
         if (err.error && err.error.message) {
           errorMessage = 'Error: ' + err.error.message;
