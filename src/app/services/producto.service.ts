@@ -3,6 +3,11 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ProductoRegistroRequest } from '../interfaces/producto-registro-request.interface';
 import { ProductoResponse } from '../interfaces/producto-response.interface';
+// >>>>>>> HEAD y el resto de líneas con muchos caracteres son marcadores de conflicto de Git.
+// Debes elegir una de las líneas, o combinarlas. La siguiente línea es la correcta si ProductoUpdateRequest es una importación.
+import { ProductoUpdateRequest } from '../interfaces/producto-update-request.interface'; // Asegúrate de que esta ruta sea correcta
+// <<<<<<< HEAD y el resto de líneas son marcadores de conflicto de Git.
+// >>>>>>> 2822da79c3a55a237f9b3fe5822d07ac207e6143 // Esta línea es un marcador de conflicto.
 import { Producto } from '../interfaces/producto.interface'; // Si la interfaz Producto está en el mismo componente
 
 // O si creaste un archivo src/app/interfaces/producto.interface.ts:
@@ -45,29 +50,36 @@ export class ProductoService {
     // Asumiendo que el endpoint para registrar sin guía es POST /productos/registrar
     return this.http.post<ProductoResponse>(`${this.baseUrl}/registrar`, productoData);
   }
+
   registrarProductoConGuia(formData: FormData): Observable<ProductoResponse> {
     // HttpClient se encarga de establecer 'Content-Type': 'multipart/form-data' automáticamente para FormData.
     return this.http.post<ProductoResponse>(`${this.baseUrl}/registrar-con-guia`, formData);
   }
 
   // Tu método existente para obtener productos por cliente
-  getProductosByCliente(idCliente: number): Observable<Producto[]> {
-    return this.http.get<Producto[]>(`${this.baseUrl}/cliente/${idCliente}`);
+  getProductosByCliente(idCliente: number): Observable<ProductoResponse[]> {
+    return this.http.get<ProductoResponse[]>(`${this.baseUrl}/cliente/${idCliente}`);
+  }
+
+  // Tu método existente para obtener productos por cliente y en almacén
+  listarProductosPorClienteYEnAlmacen(idCliente: number): Observable<ProductoResponse[]> {
+    return this.http.get<ProductoResponse[]>(`${this.baseUrl}/cliente/${idCliente}/en-almacen`);
   }
 
   // Tu método existente para eliminar producto
   deleteProduct(idProducto: number): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/${idProducto}`);
+    return this.http.delete(`${this.baseUrl}/${idProducto}`, { responseType: 'text' });
   }
 
   listarProductos(): Observable<ProductoResponse[]> {
-  return this.http.get<ProductoResponse[]>(`${this.baseUrl}`);
+    return this.http.get<ProductoResponse[]>(`${this.baseUrl}`);
   }
 
   obtenerHistorial(): Observable<HistorialProducto[]> {
     // Asumiendo que el endpoint para obtener el historial es GET /productos/historial
     return this.http.get<HistorialProducto[]>(`${this.baseUrl}/historial`);
   }
+
   obtenerHistorialPorEstado(idEstado: number): Observable<HistorialProducto[]> {
     return this.http.get<HistorialProducto[]>(`${this.baseUrl}/historial/estado-envio/${idEstado}`);
   }
@@ -83,10 +95,16 @@ export class ProductoService {
   }
 
   getPuntosAcopio(): Observable<any[]> {
-  return this.http.get<any[]>('http://localhost:8080/api/puntos-acopio');
-}
+    return this.http.get<any[]>('http://localhost:8080/api/puntos-acopio');
+  }
 
-getEstadosEnvio(): Observable<any[]> {
-  return this.http.get<any[]>('http://localhost:8080/api/estados-envio');
-}
+  getEstadosEnvio(): Observable<any[]> {
+    return this.http.get<any[]>('http://localhost:8080/api/estados-envio');
+  }
+
+  // >>>>> ESTE ES EL MÉTODO QUE ESTABA MAL COLOCADO <<<<<
+  // Lo he movido al mismo nivel que los otros métodos de la clase ProductoService.
+  actualizarProducto(idProducto: number, productoData: ProductoUpdateRequest): Observable<ProductoResponse> {
+    return this.http.put<ProductoResponse>(`${this.baseUrl}/${idProducto}`, productoData);
+  }
 }

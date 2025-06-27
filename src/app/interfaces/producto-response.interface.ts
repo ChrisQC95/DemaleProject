@@ -1,15 +1,26 @@
 export interface ProductoResponse {
-  // Common fields you might get back
-  idProducto: number;           // The ID of the newly created product
-  nombre: string;               // The name of the product
-  mensaje?: string;             // A success message from the backend (optional)
-  fechaIngreso?: string;        // Date of registration (if returned)
-  // Add any other specific fields that your backend returns upon successful registration
-  // For example:
-  // estadoEnvioNombre?: string;
-  // tipoProductoNombre?: string;
-  // clienteNombre?: string;
-  // trabajadorNombre?: string;
-  // distritoNombre?: string;
-  // ... and so on
+    idProducto: number;
+    producto: string;
+    alto: number;
+    ancho: number;
+    largo: number;
+    peso: number;
+    fechIngreso: string; // O Date si vas a convertirlo
+    fechLlegada: string | null; // Puede ser null, por eso 'string | null'
+
+    puntoAcopioNombre: string;
+    tipoProductoNombre: string;
+    clienteNombreCompleto: string;
+    estadoEnvioNombre: string;
+    distritoDestinoNombre: string;
+    trabajadorNombre: string;
+
+    idPuntoAcopio: number;
+    idTipoProducto: number;
+    idCliente: number;
+    idEstadoEnvio: number;
+    idDistrito: number;
+    idTrabajador: number;
+
+    guiaRemisionBase64: string | null; // Puede ser null si no hay guía o está vacío
 }

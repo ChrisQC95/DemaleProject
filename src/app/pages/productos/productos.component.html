@@ -281,48 +281,47 @@
               <th scope="col">Status</th>
               <th scope="col">Fecha Ingreso</th>
               <th scope="col"></th>
-              
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let producto of productos">
-              <td>{{ producto.codigo || '--' }}</td>
-              <td>{{ producto.nombre }}</td>
-              <td>{{ producto.categoria }}</td>
+              <td>{{ producto.idProducto || '--' }}</td>
+              <td>{{ producto.producto }}</td>
+              <td>{{ producto.tipoProductoNombre }}</td>
               <td>{{ producto.peso | number:'1.1-1' }}</td>
-              <td>{{ producto.medidas }}</td>
-              <td>{{ producto.destino }}</td>
+              <td>{{ getMedidas(producto) }}</td>
+              <td>{{ producto.distritoDestinoNombre }}</td>
               <td>
                 <span class="badge" [ngClass]="{
-                  'badge-success': producto.estado === 'EN_ALMACEN',
-                  'badge-warning': producto.estado === 'EN_TRANSITO',
-                  'badge-danger': producto.estado === 'ENTREGADO'
-                }">
-                  {{ getEstadoText(producto.estado) }}
+                    'badge-success': producto.estadoEnvioNombre === 'En Almacén',
+                    'badge-warning': producto.estadoEnvioNombre === 'En Tránsito',
+                    'badge-danger': producto.estadoEnvioNombre === 'Entregado'
+                  }">
+                  {{ producto.estadoEnvioNombre }}
                 </span>
               </td>
-              <td>{{ producto.fechaIngreso | date:'dd/MM/yyyy' }}</td>
+              <td>{{ producto.fechIngreso | date:'dd/MM/yyyy' }}</td>
               <td class="text-right">
                 <button class="btn btn-sm btn-icon btn-primary" (click)="editProduct(producto)" title="Editar">
                   <i class="fas fa-edit"></i>
                 </button>
-                <button class="btn btn-sm btn-icon btn-danger" (click)="confirmDelete(producto.id)" title="Eliminar">
+                <button class="btn btn-sm btn-icon btn-danger" (click)="confirmDelete(producto.idProducto)" title="Eliminar">
                   <i class="fas fa-trash-alt"></i>
                 </button>
               </td>
             </tr>
-            
-            <tr *ngIf="productos.length === 0">
+
+            <tr *ngIf="productos && productos.length === 0">
               <td colspan="9" class="text-center py-4">
                 <div class="alert alert-info mb-0">
-                  No hay productos registrados
+                  No hay productos registrados para este cliente en almacén.
                 </div>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div class="card-footer py-4" *ngIf="productos.length > 0">
+      <div class="card-footer py-4" *ngIf="productos && productos.length > 0">
         <nav aria-label="Paginación">
           <ngb-pagination 
             [collectionSize]="totalItems" 
@@ -331,7 +330,7 @@
             [maxSize]="5"
             [rotate]="true"
             [boundaryLinks]="true"
-            (pageChange)="loadProducts()"
+            (pageChange)="loadProductsForClientAndStatus(selectedClientForProductManagement?.idCliente)"
             class="pagination justify-content-end mb-0">
           </ngb-pagination>
         </nav>
