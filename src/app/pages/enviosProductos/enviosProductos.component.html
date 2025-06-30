@@ -1,8 +1,7 @@
 <div class="header custom-header pb-8 pt-5 pt-md-8">
   <div class="container-fluid">
     <div class="header-body">
-      <!-- Puedes agregar más contenido aquí si lo deseas -->
-    </div>
+      </div>
   </div>
 </div>
 
@@ -18,49 +17,39 @@
           </div>
         </div>
 
-        <!-- Filtros + Botón -->
         <div class="card-body pt-0 pb-3">
           <div class="row">
-            <!-- Campo de búsqueda -->
             <div class="col-md-6 col-lg-4 mb-3">
               <div class="input-group input-group-alternative">
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="fas fa-search"></i></span>
                 </div>
                 <input class="form-control form-control-alternative"
-                      placeholder="Buscar..."
-                      type="text"
-                      [(ngModel)]="searchTerm"
-                      (input)="aplicarFiltros()">
+                       placeholder="Buscar..."
+                       type="text"
+                       [(ngModel)]="searchTerm"
+                       (input)="aplicarFiltros()">
               </div>
             </div>
 
-            <!-- Filtro por estado -->
             <div class="col-md-3 col-lg-2 mb-3">
               <select class="form-control form-control-alternative"
                       [(ngModel)]="estadoFilter"
                       (change)="aplicarFiltros()">
                 <option value="">Estados</option>
-                <option value="completado">Completado</option>
-                <option value="pendiente">Pendiente</option>
-                <option value="cancelado">Cancelado</option>
+                <option *ngFor="let estado of estadosEnvioDropdown" [value]="estado.id">{{ estado.nombre }}</option>
               </select>
             </div>
 
-            <!-- Filtro por acopio -->
             <div class="col-md-3 col-lg-2 mb-3">
               <select class="form-control form-control-alternative"
                       [(ngModel)]="acopioFilter"
                       (change)="aplicarFiltros()">
                 <option value="">Puntos de acopio</option>
-                <option value="Lima">Lima</option>
-                <option value="Trujillo">Trujillo</option>
-                <option value="Arequipa">Arequipa</option>
-                <option value="Cusco">Cusco</option>
+                <option *ngFor="let acopio of puntosAcopioDropdown" [value]="acopio.nombre">{{ acopio.nombre }}</option>
               </select>
             </div>
 
-            <!-- Botón agregar envío -->
             <div class="col-md-12 col-lg-4 mb-3">
               <button class="btn btn-primary" style="margin-left: 160px;" (click)="openModal(envioModal)">
                 <i class="ni ni-fat-add mr-1"></i>Agregar Envío
@@ -68,230 +57,218 @@
             </div>
           </div>
         </div>
-        <!-- ... Código anterior sin cambios hasta la tabla ... -->
+        <div class="table-responsive">
+          <table class="table align-items-center table-flush">
+            <thead class="thead-light">
+              <tr>
+                <th scope="col">CÓDIGO</th>
+                <th scope="col">DESTINO</th>
+                <th scope="col">FECHA SALIDA</th>
+                <th scope="col">FECHA LLEGADA</th>
+                <th scope="col">CHOFER</th>
+                <th scope="col">PUNTO DE ACOPIO</th>
+                <th scope="col">VEHÍCULO</th>
+                <th scope="col">RUTA</th>
+                <th scope="col">ESTADO</th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="filteredEnvios.length === 0">
+                <td colspan="10" class="text-center py-4">
+                  <div class="alert alert-info mb-0">
+                    {{
+                      acopioFilter
+                        ? 'No hay datos de acopio en ' + acopioFilter
+                        : estadoFilter
+                          ? 'No hay envíos con estado ' + estadoFilter
+                          : searchTerm
+                            ? 'No se encontraron resultados para tu búsqueda'
+                            : 'No hay envíos para mostrar.'
+                    }}
+                  </div>
+                </td>
+              </tr>
 
-      <!-- Tabla principal -->
-      <div class="table-responsive">
-        <table class="table align-items-center table-flush">
-          <thead class="thead-light">
-            <tr>
-              <th scope="col">CÓDIGO</th>
-              <th scope="col">DESTINO</th>
-              <th scope="col">FECHA SALIDA</th>
-              <th scope="col">FECHA LLEGADA</th>
-              <th scope="col">CHOFER</th>
-              <th scope="col">PUNTO DE ACOPIO</th>
-              <th scope="col">VEHÍCULO</th>
-              <th scope="col">RUTA</th>
-              <th scope="col">ESTADO</th>
-              <th scope="col"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngIf="filteredEnvios.length === 0">
-              <td colspan="10" class="text-center py-4">
-                <div class="alert alert-info mb-0">
-                  {{
-                    acopioFilter
-                      ? 'No hay datos de acopio en ' + acopioFilter
-                      : estadoFilter
-                        ? 'No hay envíos con estado ' + estadoFilter
-                        : searchTerm
-                          ? 'No se encontraron resultados para tu búsqueda'
-                          : 'No hay envíos para mostrar.'
-                  }}
+              <tr *ngFor="let envio of datosPaginados">
+                <td>{{ envio.id }}</td>
+                <td>{{ envio.destino }}</td>
+                <td>{{ envio.fechaSalida | date: 'yyyy-MM-dd' }}</td>
+                <td>{{ envio.fechaLlegada | date: 'yyyy-MM-dd' }}</td>
+                <td>{{ envio.chofer }}</td>
+                <td>{{ envio.acopio }}</td>
+                <td>{{ envio.vehiculo }}</td>
+                <td>{{ envio.ruta }}</td>
+                <td>{{ envio.estado }}</td>
+                <td>
+                  <button class="btn btn-sm btn-warning mr-1" (click)="editarEnvio(envio)">
+                    <i class="fas fa-edit"></i> Editar
+                  </button>
+                  <button class="btn btn-sm btn-danger" (click)="eliminarEnvio(envio)">
+                    <i class="fas fa-trash"></i> Eliminar
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card-footer py-4">
+          <nav aria-label="...">
+            <ul class="pagination justify-content-end mb-0">
+              <li class="page-item" [class.disabled]="pageIndex === 0">
+                <a class="page-link" (click)="primeraPagina()">
+                  <i class="fas fa-angle-double-left"></i>
+                </a>
+              </li>
+              <li class="page-item" [class.disabled]="pageIndex === 0">
+                <a class="page-link" (click)="anteriorPagina()">
+                  <i class="fas fa-angle-left"></i>
+                </a>
+              </li>
+
+              <li class="page-item"
+                  *ngFor="let pagina of getPageNumbers()"
+                  [class.active]="pagina === pageIndex + 1">
+                <a class="page-link" (click)="irAPagina(pagina)">
+                  {{ pagina }}
+                </a>
+              </li>
+
+              <li class="page-item" [class.disabled]="(pageIndex + 1) * pageSize >= filteredEnvios.length">
+                <a class="page-link" (click)="siguientePagina()">
+                  <i class="fas fa-angle-right"></i>
+                </a>
+              </li>
+              <li class="page-item" [class.disabled]="(pageIndex + 1) * pageSize >= filteredEnvios.length">
+                <a class="page-link" (click)="ultimaPagina()">
+                  <i class="fas fa-angle-double-right"></i>
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+
+        <ng-template #envioModal let-modal>
+          <div class="modal-header">
+            <h5 class="modal-title">Agregar Envío</h5>
+            <button type="button" class="close" (click)="modal.dismiss('Cross click')" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form>
+              <div class="row">
+                <div class="col-md-3 mb-3">
+                  <label for="acopioSelect">ACOPIO</label>
+                  <select class="form-control" id="acopioSelect" [(ngModel)]="nuevoEnvio.idAcopio" name="idAcopio">
+                    <option [ngValue]="null">Seleccione un acopio</option>
+                    <option *ngFor="let acopio of puntosAcopioDropdown" [ngValue]="acopio.id">{{ acopio.nombre }}</option>
+                  </select>
                 </div>
-              </td>
-            </tr>
+                <div class="col-md-3 mb-3">
+                  <label for="destinoSelect">DESTINO</label>
+                  <select class="form-control" id="destinoSelect" [(ngModel)]="nuevoEnvio.idDestino" name="idDestino">
+                    <option [ngValue]="null">Seleccione un destino</option>
+                    <option *ngFor="let distrito of distritosDropdown" [ngValue]="distrito.id">{{ distrito.nombre }}</option>
+                  </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                  <label for="choferSelect">CHOFER</label>
+                  <select class="form-control" id="choferSelect" [(ngModel)]="nuevoEnvio.idChofer" name="idChofer">
+                    <option [ngValue]="null">Seleccione un chofer</option>
+                    <option *ngFor="let conductor of conductores" [ngValue]="conductor.idConductor">{{ conductor.nombreCompleto }}</option>
+                  </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                  <label for="vehiculoSelect">VEHÍCULO</label>
+                  <select class="form-control" id="vehiculoSelect" [(ngModel)]="nuevoEnvio.idVehiculo" name="idVehiculo">
+                    <option [ngValue]="null">Seleccione un vehículo</option>
+                    <option *ngFor="let vehiculo of vehiculos" [ngValue]="vehiculo.idVehiculo">{{ vehiculo.descripcion }}</option>
+                  </select>
+                </div>
+              </div>
 
-            <tr *ngFor="let envio of datosPaginados">
-              <td>{{ envio.id }}</td>
-              <td>{{ envio.destino }}</td>
-              <td>{{ envio.fechaSalida | date: 'yyyy-MM-dd' }}</td>
-              <td>{{ envio.fechaLlegada | date: 'yyyy-MM-dd' }}</td>
-              <td>{{ envio.chofer }}</td>
-              <td>{{ envio.acopio }}</td>
-              <td>{{ envio.vehiculo }}</td>
-              <td>{{ envio.ruta }}</td>
-              <td>{{ envio.estado }}</td>
-              <td>
-              <button class="btn btn-sm btn-warning mr-1" (click)="editarEnvio(envio)">
-                <i class="fas fa-edit"></i> Editar
-              </button>
-              <button class="btn btn-sm btn-danger" (click)="eliminarEnvio(envio)">
-                <i class="fas fa-trash"></i> Eliminar
-              </button>
-            </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="observacionInput">OBSERVACIÓN</label>
+                  <input type="text" class="form-control" id="observacionInput" placeholder="Ingrese una observación" [(ngModel)]="nuevoEnvio.observacion" name="observacion">
+                </div>
+                <div class="col-md-3 mb-3">
+                  <label for="fechaSalidaInput">FECHA SALIDA</label>
+                  <input type="date" class="form-control" id="fechaSalidaInput" [(ngModel)]="nuevoEnvio.fechaSalida" name="fechaSalida">
+                </div>
+                <div class="col-md-3 mb-3">
+                  <label for="rutaSelect">RUTA</label>
+                  <select class="form-control" id="rutaSelect" [(ngModel)]="nuevoEnvio.idRuta" name="idRuta">
+                    <option [ngValue]="null">Seleccione una ruta</option>
+                    <option *ngFor="let ruta of rutas" [ngValue]="ruta.idRuta">{{ ruta.descripcionRuta }}</option>
+                  </select>
+                </div>
+              </div>
 
-      <!-- Paginación igual que historial -->
-      <div class="card-footer py-4">
-        <nav aria-label="...">
-          <ul class="pagination justify-content-end mb-0">
-            <li class="page-item" [class.disabled]="pageIndex === 0">
-              <a class="page-link" (click)="primeraPagina()">
-                <i class="fas fa-angle-double-left"></i>
-              </a>
-            </li>
-            <li class="page-item" [class.disabled]="pageIndex === 0">
-              <a class="page-link" (click)="anteriorPagina()">
-                <i class="fas fa-angle-left"></i>
-              </a>
-            </li>
+              <div class="row mt-3">
+                <div class="col-md-3 mb-3">
+                  <label for="fechaInicioInput">FECHA INICIO</label>
+                  <input type="date" class="form-control" id="fechaInicioInput" 
+                          [(ngModel)]="nuevoEnvio.fechaInicioProductos" name="fechaInicioProductos"
+                          (change)="applyDateFilter()">
+                </div>
+                <div class="col-md-3 mb-3">
+                  <label for="fechaFinInput">FECHA FIN</label>
+                  <input type="date" class="form-control" id="fechaFinInput" 
+                          [(ngModel)]="nuevoEnvio.fechaFinProductos" name="fechaFinProductos"
+                          (change)="applyDateFilter()">
+                </div>
+              </div>
 
-            <li class="page-item"
-                *ngFor="let pagina of getPageNumbers()"
-                [class.active]="pagina === pageIndex + 1">
-              <a class="page-link" (click)="irAPagina(pagina)">
-                {{ pagina }}
-              </a>
-            </li>
-
-            <li class="page-item" [class.disabled]="(pageIndex + 1) * pageSize >= filteredEnvios.length">
-              <a class="page-link" (click)="siguientePagina()">
-                <i class="fas fa-angle-right"></i>
-              </a>
-            </li>
-            <li class="page-item" [class.disabled]="(pageIndex + 1) * pageSize >= filteredEnvios.length">
-              <a class="page-link" (click)="ultimaPagina()">
-                <i class="fas fa-angle-double-right"></i>
-              </a>
-            </li>
-          </ul>
-        </nav>
-      </div>
-
-       <!-- ... Tu código de cabecera y filtros permanece igual ... -->
-
-<!-- Modal de Agregar Envío -->
-<ng-template #envioModal let-modal>
-  <div class="modal-header">
-    <h5 class="modal-title">Agregar Envío</h5>
-    <button type="button" class="close" (click)="modal.dismiss('Cross click')" aria-label="Close">
-      <span aria-hidden="true">&times;</span>
-    </button>
-  </div>
-  <div class="modal-body">
-    <form>
-      <!-- Formulario -->
-      <div class="row">
-        <div class="col-md-3 mb-3">
-          <label for="acopioSelect">ACOPIO</label>
-          <select class="form-control" id="acopioSelect">
-            <option value="">Ingrese una opción</option>
-            <option value="lima">Lima</option>
-            <option value="arequipa">Arequipa</option>
-          </select>
-        </div>
-        <div class="col-md-3 mb-3">
-          <label for="destinoSelect">DESTINO</label>
-          <select class="form-control" id="destinoSelect">
-            <option value="">Ingrese una opción</option>
-            <option value="puno">Puno</option>
-            <option value="ica">Ica</option>
-          </select>
-        </div>
-        <div class="col-md-3 mb-3">
-          <label for="choferSelect">CHOFER</label>
-          <select class="form-control" id="choferSelect">
-            <option value="">Ingrese una opción</option>
-            <option value="chofer1">Chofer 1</option>
-            <option value="chofer2">Chofer 2</option>
-          </select>
-        </div>
-        <div class="col-md-3 mb-3">
-          <label for="vehiculoSelect">VEHICULO</label>
-          <select class="form-control" id="vehiculoSelect">
-            <option value="">Ingrese una opción</option>
-            <option value="vehiculo1">Vehiculo 1</option>
-            <option value="vehiculo2">Vehiculo 2</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label for="observacionInput">OBSERVACIÓN</label>
-          <input type="text" class="form-control" id="observacionInput" placeholder="Ingrese una observación">
-        </div>
-        <div class="col-md-3 mb-3">
-          <label for="fechaSalidaInput">FECHA SALIDA</label>
-          <input type="date" class="form-control" id="fechaSalidaInput">
-        </div>
-        <div class="col-md-3 mb-3">
-          <label for="rutaSelect">RUTA</label>
-          <select class="form-control" id="rutaSelect">
-            <option value="">Ingrese una opción</option>
-            <option value="ruta1">Ruta 1</option>
-            <option value="ruta2">Ruta 2</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="row mt-3">
-        <div class="col-md-3 mb-3">
-          <label for="fechaInicioInput">FECHA INICIO</label>
-          <input type="date" class="form-control" id="fechaInicioInput">
-        </div>
-        <div class="col-md-3 mb-3">
-          <label for="fechaFinInput">FECHA FIN</label>
-          <input type="date" class="form-control" id="fechaFinInput">
-        </div>
-      </div>
-
-      <!-- Tabla de productos del historial -->
-      <div class="table-responsive">
-  <table class="table table-bordered table-sm">
-    <thead class="thead-light">
-      <tr>
-        <th>
-          <input type="checkbox" [(ngModel)]="seleccionarTodos" (change)="toggleSeleccionTodos()" />
-        </th>
-        <th>Cliente</th>
-        <th>Producto</th>
-        <th>Categoría</th>
-        <th>Fecha Ingreso</th>
-        <th>Punto Acopio</th>
-        <th>Destino</th>
-        <th>Estado</th>
-        <th>Chofer</th>
-        <th>Vehículo</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let producto of productosHistorialModal"
-          [class.fila-seleccionada]="productoSeleccionado.includes(producto)">
-        <td>
-          <input type="checkbox"
-                 [checked]="productoSeleccionado.includes(producto)"
-                 (change)="toggleSeleccionProducto(producto)">
-        </td>
-        <td>{{ producto.cliente }}</td>
-        <td>{{ producto.producto }}</td>
-        <td>{{ producto.categoria }}</td>
-        <td>{{ producto.fechaIngreso }}</td>
-        <td>{{ producto.puntoAcopio }}</td>
-        <td>{{ producto.destino }}</td>
-        <td>{{ producto.estado }}</td>
-        <td>{{ producto.chofer }}</td>
-        <td>{{ producto.vehiculo }}</td>
-      </tr>
-      <tr *ngIf="productosHistorialModal.length === 0">
-        <td colspan="10" class="text-center text-muted">No hay productos registrados.</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-    </form>
-  </div>
-  <div class="modal-footer">
-    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
-    <button type="button" class="btn btn-primary">Guardar</button>
-  </div>
-</ng-template>
+              <div class="table-responsive">
+                <table class="table table-bordered table-sm">
+                  <thead class="thead-light">
+                    <tr>
+                      <th>
+                        <input type="checkbox" [(ngModel)]="seleccionarTodos" (change)="toggleSeleccionTodos()" name="seleccionarTodos"/>
+                      </th>
+                      <th>Cliente</th>
+                      <th>Producto</th>
+                      <th>Categoría</th>
+                      <th>Medidas</th>
+                      <th>Fecha Ingreso</th>
+                      <th>Punto Acopio</th>
+                      <th>Destino</th>
+                      <th>Estado</th>
+                      <th>Atendido por</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngIf="productosHistorialModal.length === 0">
+                      <td colspan="10" class="text-center text-muted">No hay productos registrados.</td>
+                    </tr>
+                    <tr *ngFor="let producto of productosHistorialModal"
+                        [class.fila-seleccionada]="productoSeleccionado.includes(producto)">
+                      <td>
+                        <input type="checkbox"
+                              [checked]="productoSeleccionado.includes(producto)"
+                              (change)="toggleSeleccionProducto(producto)"
+                              [name]="'producto_' + producto.idProducto"> </td>
+                      <td>{{ producto.cliente }}</td>
+                      <td>{{ producto.producto }}</td>
+                      <td>{{ producto.categoria }}</td>
+                      <td>{{ producto.medidas }}</td> <td>{{ producto.fechaIngreso }}</td>
+                      <td>{{ producto.puntoAcopio }}</td>
+                      <td>{{ producto.destino }}</td>
+                      <td>{{ producto.estado }}</td>
+                      <td>{{ producto.atendidoPor }}</td> </tr>
+                  </tbody>
+                </table>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
+            <button type="button" class="btn btn-primary" (click)="guardarEnvio()">Guardar</button>
+          </div>
+        </ng-template>
 
       </div>
     </div>

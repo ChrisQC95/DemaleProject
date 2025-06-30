@@ -107,4 +107,8 @@ export class ProductoService {
   actualizarProducto(idProducto: number, productoData: ProductoUpdateRequest): Observable<ProductoResponse> {
     return this.http.put<ProductoResponse>(`${this.baseUrl}/${idProducto}`, productoData);
   }
+  getProductosEnAlmacen(): Observable<ProductoResponse[]> {
+    // Apunta al endpoint de tu backend /api/productos/en-almacen
+    return this.http.get<ProductoResponse[]>(`${this.baseUrl}/en-almacen`);
+  }
 }

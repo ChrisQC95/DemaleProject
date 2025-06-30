@@ -1,6 +1,18 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-
+import { HttpClient } from '@angular/common/http'; 
+import { ClienteService } from '../../services/cliente.service'; // Asegúrate de la ruta correcta
+import { ProductoService } from '../../services/producto.service';
+import { ConductorDropdown } from '../../interfaces/conductor-dropdown.interface';
+import { VehiculoDropdown } from '../../interfaces/vehiculo-dropdown.interface';
+import { RutaDropdown } from '../../interfaces/ruta-dropdown.interface';
+import { ConductorService } from '../../services/conductor.service';
+import { VehiculoService } from '../../services/vehiculo.service';
+import { RutaService } from '../../services/ruta.service';
+import { PuntoAcopioService } from '../../services/punto-acopio.service';
+import { DistritoService } from '../../services/distrito.service';
+import { Distrito } from '../../interfaces/distrito.interface'; // Asume que esta es la interfaz correcta
+import { HistorialProducto } from '../../services/producto.service';
 interface Envio {
   id: string;
   destino: string;
@@ -14,15 +26,16 @@ interface Envio {
 }
 
 interface ProductoHistorial {
-  cliente: string;
-  producto: string;
-  categoria: string;
-  fechaIngreso: string;
-  puntoAcopio: string;
-  destino: string;
-  estado: string;
-  chofer: string;
-  vehiculo: string;
+  idProducto: number; // Coincide con HistorialProducto
+  cliente: string; // Mapea de clienteNombreCompleto
+  producto: string; // Coincide con HistorialProducto
+  categoria: string; // Mapea de tipoProductoNombre
+  medidas: string; // Esta la construiremos combinando alto, ancho, largo, peso
+  fechaIngreso: string; // Mapea de fechIngreso
+  puntoAcopio: string; // Mapea de puntoAcopioNombre
+  destino: string; // Mapea de distritoDestinoNombre
+  estado: string; // Mapea de estadoEnvioNombre
+  atendidoPor: string; 
 }
 
 @Component({
@@ -33,119 +46,55 @@ interface ProductoHistorial {
 export class EnviosProductosComponent implements OnInit {
   @ViewChild('envioModal') envioModalContent: any;
 
-  constructor(private modalService: NgbModal) {}
+  conductores: ConductorDropdown[] = [];
+  vehiculos: VehiculoDropdown[] = [];
+  rutas: RutaDropdown[] = [];
+  productosEnAlmacenModal: ProductoHistorial[] = [];
+  puntosAcopioDropdown: { id: number; nombre: string }[] = [];
+  distritosDropdown: { id: number; nombre: string }[] = [];
+  estadosEnvioDropdown: { id: number, nombre: string }[] = [];
+
+  nuevoEnvio: {
+    idChofer: number | null;
+    idVehiculo: number | null;
+    idRuta: number | null;
+    idAcopio: number | null; // Corresponde al punto de acopio
+    idDestino: number | null; // Corresponde al distrito de destino
+    fechaSalida: string | null; // Para vincular con el input type="date"
+    observacion: string | null;
+    fechaInicioProductos: string | null; // Para el filtro de fecha de productos
+    fechaFinProductos: string | null; // Para el filtro de fecha de productos
+  } = {
+    idChofer: null,
+    idVehiculo: null,
+    idRuta: null,
+    idAcopio: null,
+    idDestino: null,
+    fechaSalida: null,
+    observacion: null,
+    fechaInicioProductos: null,
+    fechaFinProductos: null,
+  };
+
+  constructor(private modalService: NgbModal,
+    private conductorService: ConductorService,
+    private vehiculoService: VehiculoService,
+    private rutaService: RutaService,
+    private clienteService: ClienteService,
+    private productoService: ProductoService
+  ) {}
 
   // Lista completa
-  envios: Envio[] = [
-    {
-      id: 'ENV-001',
-      destino: 'Arequipa',
-      fechaSalida: new Date('2024-06-10'),
-      fechaLlegada: new Date('2024-06-13'),
-      chofer: 'Carlos Gómez',
-      acopio: 'Lima',
-      vehiculo: 'ABC-123',
-      ruta: 'Ruta 1',
-      estado: 'pendiente'
-    },
-    {
-      id: 'ENV-002',
-      destino: 'Puno',
-      fechaSalida: new Date('2024-06-12'),
-      fechaLlegada: new Date('2024-06-15'),
-      chofer: 'Luis Pérez',
-      acopio: 'Arequipa',
-      vehiculo: 'XYZ-789',
-      ruta: 'Ruta 2',
-      estado: 'completado'
-    },
-    {
-      id: 'ENV-003',
-      destino: 'Arequipa',
-      fechaSalida: new Date('2024-06-10'),
-      fechaLlegada: new Date('2024-06-13'),
-      chofer: 'Carlos Gómez',
-      acopio: 'Lima',
-      vehiculo: 'ABC-123',
-      ruta: 'Ruta 1',
-      estado: 'cancelado'
-    },
-    {
-      id: 'ENV-004',
-      destino: 'Puno',
-      fechaSalida: new Date('2024-06-12'),
-      fechaLlegada: new Date('2024-06-15'),
-      chofer: 'Luis Pérez',
-      acopio: 'Arequipa',
-      vehiculo: 'XYZ-789',
-      ruta: 'Ruta 2',
-      estado: 'completado'
-    },
-    {
-      id: 'ENV-005',
-      destino: 'Cusco',
-      fechaSalida: new Date('2024-06-15'),
-      fechaLlegada: new Date('2024-06-17'),
-      chofer: 'Ana Torres',
-      acopio: 'Lima',
-      vehiculo: 'LMN-456',
-      ruta: 'Ruta 3',
-      estado: 'pendiente'
-    },
-    {
-      id: 'ENV-006',
-      destino: 'Ica',
-      fechaSalida: new Date('2024-06-16'),
-      fechaLlegada: new Date('2024-06-18'),
-      chofer: 'Pedro Sánchez',
-      acopio: 'Cusco',
-      vehiculo: 'DEF-321',
-      ruta: 'Ruta 4',
-      estado: 'completado'
-    },
-    {
-      id: 'ENV-007',
-      destino: 'Tacna',
-      fechaSalida: new Date('2024-06-20'),
-      fechaLlegada: new Date('2024-06-22'),
-      chofer: 'Lucía Quispe',
-      acopio: 'Arequipa',
-      vehiculo: 'JKL-987',
-      ruta: 'Ruta 1',
-      estado: 'pendiente'
-    }
-  ];
+  envios: Envio[] = [];
 
   // Lista de productos en el modal
-productosHistorialModal: ProductoHistorial[] = [
-  {
-    cliente: 'Juan Pérez',
-    producto: 'Leche',
-    categoria: 'Lácteos',
-    fechaIngreso: '2024-06-20',
-    puntoAcopio: 'Lima',
-    destino: 'Arequipa',
-    estado: 'completado',
-    chofer: 'Carlos Gómez',
-    vehiculo: 'ABC-123'
-  },
-  {
-    cliente: 'María López',
-    producto: 'Arroz',
-    categoria: 'Granos',
-    fechaIngreso: '2024-06-21',
-    puntoAcopio: 'Arequipa',
-    destino: 'Cusco',
-    estado: 'pendiente',
-    chofer: 'Ana Torres',
-    vehiculo: 'LMN-456'
-  }
-];
+  productosHistorialModal: ProductoHistorial[] = [];
+  allProductosModal: ProductoHistorial[] = [];
 
-// Función para eliminar producto del modal
-eliminarProducto(producto: ProductoHistorial): void {
-  this.productosHistorialModal = this.productosHistorialModal.filter(p => p !== producto);
-}
+  // Función para eliminar producto del modal
+  eliminarProducto(producto: ProductoHistorial): void {
+    this.productosHistorialModal = this.productosHistorialModal.filter(p => p !== producto);
+  }
     
   seleccionarTodos: boolean = false;
   productoSeleccionado: ProductoHistorial[] = [];
@@ -163,12 +112,166 @@ eliminarProducto(producto: ProductoHistorial): void {
 
   ngOnInit(): void {
     this.aplicarFiltros();
+    this.loadConductores();
+    this.loadVehiculos();
+    this.loadRutas();
+    this.loadDistritos();
+    this.loadPuntosAcopio();
+    this.loadEstadosEnvio();
+  }
+  
+  loadConductores(): void {
+    this.conductorService.getConductoresForDropdown().subscribe(
+      data => {
+        this.conductores = data;
+        console.log('Conductores cargados:', this.conductores);
+      },
+      error => {
+        console.error('Error al cargar conductores:', error);
+      }
+    );
+  }
+  loadVehiculos(): void {
+    this.vehiculoService.getVehiculosForDropdown().subscribe(
+      data => {
+        this.vehiculos = data;
+        console.log('Vehículos cargados:', this.vehiculos);
+      },
+      error => {
+        console.error('Error al cargar vehículos:', error);
+      }
+    );
+  }
+  loadRutas(): void {
+    this.rutaService.getRutasForDropdown().subscribe(
+      data => {
+        this.rutas = data;
+        console.log('Rutas cargadas:', this.rutas);
+      },
+      error => {
+        console.error('Error al cargar rutas:', error);
+      }
+    );
+  }
+  loadDistritos(): void {
+    this.clienteService.getDistritos().subscribe({ // Usando ClienteService
+      next: (data: Distrito[]) => { // Especifica el tipo para 'data'
+        this.distritosDropdown = data.map(d => ({
+          id: d.idDistrito,
+          nombre: d.nombreDistrito
+        }));
+        console.log('Distritos cargados:', this.distritosDropdown);
+      },
+      error: (err) => console.error('Error al cargar distritos:', err)
+    });
   }
 
+  loadPuntosAcopio(): void {
+    this.productoService.getPuntosAcopio().subscribe(data => { // Usando ProductoService
+      this.puntosAcopioDropdown = data.map(a => ({
+        id: a.idPuntoAcopio,
+        nombre: a.nombreAcopio
+      }));
+      console.log('Puntos de Acopio cargados:', this.puntosAcopioDropdown);
+    });
+  }
+  loadEstadosEnvio(): void {
+    this.productoService.getEstadosEnvio().subscribe(data => {
+      this.estadosEnvioDropdown = data.map(e => ({
+          id: e.idEstadoEnvio,
+          nombre: e.estado
+        }));
+    });
+  }
+  
   openModal(modalRef: any) {
+    const today = new Date();
+    const formattedToday = today.toISOString().split('T')[0];
+    this.nuevoEnvio = {
+      idChofer: null,
+      idVehiculo: null,
+      idRuta: null,
+      idAcopio: null,
+      idDestino: null,
+      fechaSalida: null,
+      observacion: null,
+      fechaInicioProductos: formattedToday,
+      fechaFinProductos: formattedToday,
+    };
+    this.productoSeleccionado = []; // Limpia las selecciones previas
+    this.seleccionarTodos = false; // Desmarca "Seleccionar todos"
+    this.loadProductosEnAlmacen();
     this.modalService.open(modalRef, { size: 'xl', centered: true });
   }
+  loadProductosEnAlmacen(): void {
+    // Asumiendo que getProductosEnAlmacen() devuelve un Observable<HistorialProducto[]>
+    this.productoService.getProductosEnAlmacen().subscribe(
+      (data: HistorialProducto[]) => { // Esperamos un array de HistorialProducto
+        this.allProductosModal = data.map(p => ({
+          idProducto: p.idProducto,
+          cliente: p.clienteNombreCompleto || '',
+          producto: p.producto || '',
+          categoria: p.tipoProductoNombre || '',
+          medidas: `${p.alto || 0}x${p.ancho || 0}x${p.largo || 0} cm, ${p.peso || 0} kg`,
+          fechaIngreso: p.fechIngreso || '',
+          puntoAcopio: p.puntoAcopioNombre || '',
+          destino: p.distritoDestinoNombre || '',
+          estado: p.estadoEnvioNombre || '',
+          atendidoPor: p.trabajadorNombre || ''
+        }));
+        console.log('Productos en almacén cargados para el modal:', this.productosHistorialModal);
+      },
+      error => {
+        console.error('Error al cargar productos en almacén:', error);
+      }
+    );
+  }
+  applyDateFilter(): void {
+    if (this.allProductosModal.length === 0) {
+      this.productosHistorialModal = [];
+      return;
+    }
 
+    const fechaInicio = this.nuevoEnvio.fechaInicioProductos ? new Date(this.nuevoEnvio.fechaInicioProductos) : null;
+    const fechaFin = this.nuevoEnvio.fechaFinProductos ? new Date(this.nuevoEnvio.fechaFinProductos) : null;
+
+    this.productosHistorialModal = this.allProductosModal.filter(producto => {
+      const fechaIngresoProducto = new Date(producto.fechaIngreso);
+
+      // Si ambas fechas de filtro están presentes, verifica el rango
+      if (fechaInicio && fechaFin) {
+        // Asegúrate de comparar solo las fechas (sin la hora) para evitar problemas de zona horaria
+        const start = new Date(fechaInicio.getFullYear(), fechaInicio.getMonth(), fechaInicio.getDate());
+        const end = new Date(fechaFin.getFullYear(), fechaFin.getMonth(), fechaFin.getDate());
+        const productDate = new Date(fechaIngresoProducto.getFullYear(), fechaIngresoProducto.getMonth(), fechaIngresoProducto.getDate());
+
+        return productDate >= start && productDate <= end;
+      }
+      // Si solo hay fecha de inicio, filtra a partir de esa fecha
+      else if (fechaInicio) {
+        const start = new Date(fechaInicio.getFullYear(), fechaInicio.getMonth(), fechaInicio.getDate());
+        const productDate = new Date(fechaIngresoProducto.getFullYear(), fechaIngresoProducto.getMonth(), fechaIngresoProducto.getDate());
+        return productDate >= start;
+      }
+      // Si solo hay fecha de fin, filtra hasta esa fecha
+      else if (fechaFin) {
+        const end = new Date(fechaFin.getFullYear(), fechaFin.getMonth(), fechaFin.getDate());
+        const productDate = new Date(fechaIngresoProducto.getFullYear(), fechaIngresoProducto.getMonth(), fechaIngresoProducto.getDate());
+        return productDate <= end;
+      }
+      // Si no hay fechas de filtro, incluye todos los productos
+      return true;
+    });
+
+    // Asegúrate de que los productos seleccionados también se actualicen si se filtran
+    this.productoSeleccionado = this.productoSeleccionado.filter(p =>
+      this.productosHistorialModal.some(filteredP => filteredP.idProducto === p.idProducto)
+    );
+    this.seleccionarTodos = this.productosHistorialModal.length > 0 &&
+                           this.productoSeleccionado.length === this.productosHistorialModal.length;
+
+    console.log('Productos filtrados por fecha:', this.productosHistorialModal);
+  }
   aplicarFiltros(): void {
     let result = [...this.envios];
 
@@ -256,27 +359,34 @@ eliminarProducto(producto: ProductoHistorial): void {
   this.seleccionarTodos = this.productoSeleccionado.length === this.productosHistorialModal.length;
 }
 
-toggleSeleccionTodos() {
-  if (this.seleccionarTodos) {
-    this.productoSeleccionado = [...this.productosHistorialModal];
-  } else {
-    this.productoSeleccionado = [];
+  toggleSeleccionTodos() {
+    if (this.seleccionarTodos) {
+      this.productoSeleccionado = [...this.productosHistorialModal];
+    } else {
+      this.productoSeleccionado = [];
+    }
   }
-}
 
-editarEnvio(envio: Envio): void {
-  console.log('Editar envío:', envio);
-  // Aquí puedes abrir el modal y cargar los datos, por ejemplo
-  this.openModal(this.envioModalContent);
-  // Lógica para precargar los datos del envío en los campos del formulario
-}
-
-eliminarEnvio(envio: Envio): void {
-  const confirmacion = confirm(`¿Estás seguro de eliminar el envío ${envio.id}?`);
-  if (confirmacion) {
-    this.envios = this.envios.filter(e => e !== envio);
-    this.aplicarFiltros();
+  editarEnvio(envio: Envio): void {
+    console.log('Editar envío:', envio);
+    // Aquí puedes abrir el modal y cargar los datos, por ejemplo
+    this.openModal(this.envioModalContent);
+    // Lógica para precargar los datos del envío en los campos del formulario
   }
-}
+
+  eliminarEnvio(envio: Envio): void {
+    const confirmacion = confirm(`¿Estás seguro de eliminar el envío ${envio.id}?`);
+    if (confirmacion) {
+      this.envios = this.envios.filter(e => e !== envio);
+      this.aplicarFiltros();
+    }
+  }
+  guardarEnvio(): void {
+    console.log('Datos del formulario de envío:', this.nuevoEnvio);
+    // Aquí es donde en el futuro enviarías este objeto 'nuevoEnvio' a tu backend
+    // a través de un servicio de Envios.
+    // Por ahora, solo cerramos el modal.
+    this.modalService.dismissAll(); // Cierra todos los modales abiertos
+  }
 
 }
