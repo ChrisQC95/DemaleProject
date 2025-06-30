@@ -6,6 +6,7 @@ import { ProductoService } from '../../services/producto.service';
 import { ConductorDropdown } from '../../interfaces/conductor-dropdown.interface';
 import { VehiculoDropdown } from '../../interfaces/vehiculo-dropdown.interface';
 import { RutaDropdown } from '../../interfaces/ruta-dropdown.interface';
+import { EnviosService } from '../../services/envios.service';
 import { ConductorService } from '../../services/conductor.service';
 import { VehiculoService } from '../../services/vehiculo.service';
 import { RutaService } from '../../services/ruta.service';
@@ -13,6 +14,8 @@ import { PuntoAcopioService } from '../../services/punto-acopio.service';
 import { DistritoService } from '../../services/distrito.service';
 import { Distrito } from '../../interfaces/distrito.interface'; // Asume que esta es la interfaz correcta
 import { HistorialProducto } from '../../services/producto.service';
+import { EnvioCreacionDto } from '../../interfaces/envio-creacion-dto.interface';
+
 interface Envio {
   id: string;
   destino: string;
@@ -26,16 +29,16 @@ interface Envio {
 }
 
 interface ProductoHistorial {
-  idProducto: number; // Coincide con HistorialProducto
-  cliente: string; // Mapea de clienteNombreCompleto
-  producto: string; // Coincide con HistorialProducto
-  categoria: string; // Mapea de tipoProductoNombre
-  medidas: string; // Esta la construiremos combinando alto, ancho, largo, peso
-  fechaIngreso: string; // Mapea de fechIngreso
-  puntoAcopio: string; // Mapea de puntoAcopioNombre
-  destino: string; // Mapea de distritoDestinoNombre
-  estado: string; // Mapea de estadoEnvioNombre
-  atendidoPor: string; 
+  idProducto: number;
+  cliente: string;
+  producto: string;
+  categoria: string;
+  medidas: string;
+  fechaIngreso: string;
+  puntoAcopio: string;
+  destino: string;
+  estado: string;
+  atendidoPor: string;
 }
 
 @Component({
@@ -81,17 +84,15 @@ export class EnviosProductosComponent implements OnInit {
     private vehiculoService: VehiculoService,
     private rutaService: RutaService,
     private clienteService: ClienteService,
-    private productoService: ProductoService
+    private productoService: ProductoService,
+    private envioService: EnviosService
   ) {}
 
   // Lista completa
   envios: Envio[] = [];
-
-  // Lista de productos en el modal
   productosHistorialModal: ProductoHistorial[] = [];
   allProductosModal: ProductoHistorial[] = [];
 
-  // Función para eliminar producto del modal
   eliminarProducto(producto: ProductoHistorial): void {
     this.productosHistorialModal = this.productosHistorialModal.filter(p => p !== producto);
   }
@@ -382,11 +383,60 @@ export class EnviosProductosComponent implements OnInit {
     }
   }
   guardarEnvio(): void {
-    console.log('Datos del formulario de envío:', this.nuevoEnvio);
-    // Aquí es donde en el futuro enviarías este objeto 'nuevoEnvio' a tu backend
-    // a través de un servicio de Envios.
-    // Por ahora, solo cerramos el modal.
-    this.modalService.dismissAll(); // Cierra todos los modales abiertos
+    // 1. Validaciones básicas del frontend
+    if (!this.nuevoEnvio.idChofer || !this.nuevoEnvio.idVehiculo || !this.nuevoEnvio.idRuta ||
+        !this.nuevoEnvio.idAcopio || !this.nuevoEnvio.idDestino || !this.nuevoEnvio.fechaSalida) {
+      alert('Por favor, complete todos los campos obligatorios del envío: Chofer, Vehículo, Ruta, Acopio, Destino y Fecha de Salida.');
+      return;
+    }
+
+    if (this.productoSeleccionado.length === 0) {
+      alert('Debe seleccionar al menos un producto para crear el envío.');
+      return;
+    }
+
+    // 2. Extraer los IDs de los productos seleccionados
+    const idProductos = this.productoSeleccionado.map(p => p.idProducto);
+
+    // 3. Crear el DTO que se enviará al backend
+    const envioCreacionDto: EnvioCreacionDto = {
+      idConductor: this.nuevoEnvio.idChofer,
+      idVehiculo: this.nuevoEnvio.idVehiculo,
+      idRuta: this.nuevoEnvio.idRuta,
+      idAcopio: this.nuevoEnvio.idAcopio,   // <-- Incluye el ID de Acopio
+      idDestino: this.nuevoEnvio.idDestino, // <-- Incluye el ID de Destino
+      fechSalida: this.nuevoEnvio.fechaSalida,
+      observacion: this.nuevoEnvio.observacion,
+      idProductosSeleccionados: idProductos
+    };
+
+    console.log('Enviando DTO al backend:', envioCreacionDto);
+
+    // 4. Llamar al servicio de envío para enviar los datos al backend
+    this.envioService.crearEnvio(envioCreacionDto).subscribe({
+      next: (response) => {
+        console.log('Envío creado exitosamente:', response);
+        alert('Envío creado y productos actualizados con éxito.');
+        this.modalService.dismissAll(); // Cierra el modal
+        // Opcional: Recargar los productos en almacén para reflejar los cambios de estado
+        this.loadProductosEnAlmacen();
+        // Opcional: Si tienes una tabla principal de envíos, recargarla
+        // this.loadEnviosPrincipales();
+      },
+      error: (error) => {
+        console.error('Error al crear el envío:', error);
+        let errorMessage = 'Error al crear el envío. Por favor, intente de nuevo.';
+        if (error.error && error.error.message) {
+          errorMessage = error.error.message;
+        } else if (error.status === 400) {
+          errorMessage = 'Datos de envío incompletos o incorrectos.';
+        } else if (error.status === 500) {
+          errorMessage = 'Error interno del servidor. Verifique los IDs o el estado del backend.';
+        }
+        alert(errorMessage);
+      }
+    });
   }
+
 
 }
