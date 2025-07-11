@@ -1,8 +1,196 @@
+<!-- src/app/pages/vehiculos/vehiculos.component.html -->
 <div class="header custom-header pb-8 pt-5 pt-md-8">
   <div class="container-fluid">
     <div class="header-body">
-      <!-- Card stats -->
-      
+      <!-- Estadísticas opcionales -->
     </div>
   </div>
 </div>
+
+<div class="container mt-4 vehiculos-container">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0 text-primary">Gestión de Vehículos</h3>
+    <!-- CAMBIO: Llamada al método 'abrirFormularioNuevo()' -->
+    <button class="btn btn-primary" (click)="abrirFormularioNuevo()">
+      <i class="fas fa-plus me-1"></i> Registrar Vehículo
+    </button>
+  </div>
+
+  <!-- Mensaje de error global (fuera del modal) -->
+  <div *ngIf="errorMessage && !mostrarFormulario" class="alert alert-danger alert-dismissible fade show" role="alert">
+    <strong>¡Error!</strong> {{ errorMessage }}
+    <button type="button" class="btn-close" aria-label="Close" (click)="errorMessage = null"></button>
+  </div>
+
+  <div class="input-group mb-3">
+    <span class="input-group-text"><i class="fas fa-search"></i></span>
+    <input
+      type="text"
+      class="form-control"
+      placeholder="Buscar por placa, marca o modelo..."
+      [(ngModel)]="filtroTexto"
+      (input)="filtrarVehiculos()"
+      name="filtroBusqueda"
+    />
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle text-center">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>Placa</th>
+          <th>Marca</th>
+          <th>Modelo</th>
+          <th>Capacidad</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- CAMBIO: Pasar el objeto 'vehiculo' completo a editarVehiculo y el 'idVehiculo' a eliminarVehiculo -->
+        <tr *ngFor="let vehiculo of listaFiltrada; trackBy: trackById">
+          <td>{{ vehiculo.idVehiculo }}</td>
+          <td>{{ vehiculo.placa }}</td>
+          <td>{{ vehiculo.marca }}</td>
+          <td>{{ vehiculo.modelo }}</td>
+          <td>{{ vehiculo.capacidad }}</td>
+          <td>
+            <button class="btn btn-sm btn-warning me-1" (click)="editarVehiculo(vehiculo)">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-danger" (click)="eliminarVehiculo(vehiculo.idVehiculo!)">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="listaFiltrada.length === 0">
+          <td colspan="6" class="text-center text-muted">No se encontraron vehículos.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal formulario -->
+  <div class="modal-backdrop" *ngIf="mostrarFormulario">
+    <div class="modal-form">
+      <!-- CAMBIO: Título basado en 'modoEdicion' -->
+      <h4>{{ modoEdicion ? 'Editar Vehículo' : 'Registrar Vehículo' }}</h4>
+
+      <!-- Mensaje de error dentro del modal -->
+      <div *ngIf="errorMessage && mostrarFormulario" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>¡Error!</strong> {{ errorMessage }}
+        <button type="button" class="btn-close" aria-label="Close" (click)="errorMessage = null"></button>
+      </div>
+
+      <!-- CAMBIO: Llamada al método 'guardarVehiculo()' -->
+      <form (ngSubmit)="guardarVehiculo()" #formVehiculo="ngForm" novalidate>
+        <div class="mb-3">
+          <label for="inputPlaca" class="form-label">Placa</label>
+          <input
+            id="inputPlaca"
+            type="text"
+            [(ngModel)]="vehiculo.placa"
+            name="vehiculoPlaca"
+            required
+            class="form-control"
+            #placa="ngModel"
+          />
+          <div *ngIf="placa.invalid && (placa.dirty || placa.touched)" class="text-danger small">
+            La placa es requerida.
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="inputMarca" class="form-label">Marca</label>
+          <input
+            id="inputMarca"
+            type="text"
+            [(ngModel)]="vehiculo.marca"
+            name="vehiculoMarca"
+            required
+            class="form-control"
+            #marca="ngModel"
+          />
+          <div *ngIf="marca.invalid && (marca.dirty || marca.touched)" class="text-danger small">
+            La marca es requerida.
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="inputModelo" class="form-label">Modelo</label>
+          <input
+            id="inputModelo"
+            type="text"
+            [(ngModel)]="vehiculo.modelo"
+            name="vehiculoModelo"
+            required
+            class="form-control"
+            #modelo="ngModel"
+          />
+          <div *ngIf="modelo.invalid && (modelo.dirty || modelo.touched)" class="text-danger small">
+            El modelo es requerido.
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="inputCapacidad" class="form-label">Capacidad</label>
+          <input
+            id="inputCapacidad"
+            type="number"
+            [(ngModel)]="vehiculo.capacidad"
+            name="vehiculoCapacidad"
+            required
+            min="0.01"
+            step="0.01"
+            class="form-control"
+            #capacidad="ngModel"
+          />
+          <div *ngIf="(capacidad.invalid || vehiculo.capacidad <= 0) && (capacidad.dirty || capacidad.touched)" class="text-danger small">
+            La capacidad debe ser un número mayor a 0.
+          </div>
+        </div>
+
+        <div class="text-end">
+          <button type="button" class="btn btn-secondary me-2" (click)="cerrarFormulario()">Cancelar</button>
+          <!-- CAMBIO: Texto del botón basado en 'modoEdicion' -->
+          <button type="submit" class="btn btn-primary" [disabled]="formVehiculo.invalid">
+            {{ modoEdicion ? 'Guardar Cambios' : 'Registrar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Estilos para el modal (puedes mover esto a tu archivo SCSS global o del componente) -->
+<style>
+  .modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1050; /* Asegura que esté por encima de otros elementos */
+  }
+
+  .modal-form {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    width: 90%;
+    max-width: 500px; /* Ancho máximo para el modal */
+    z-index: 1051;
+    position: relative; /* Necesario para el botón de cerrar si lo añades */
+  }
+  .vehiculos-container .table thead th {
+    vertical-align: middle; /* Centra el texto en el encabezado de la tabla */
+  }
+  .vehiculos-container .table tbody td {
+    vertical-align: middle; /* Centra el contenido en las celdas de la tabla */
+  }
+</style>

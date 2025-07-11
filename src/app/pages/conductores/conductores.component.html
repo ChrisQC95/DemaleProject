@@ -1,8 +1,280 @@
+<!-- src/app/pages/conductores/conductores.component.html -->
 <div class="header custom-header pb-8 pt-5 pt-md-8">
   <div class="container-fluid">
     <div class="header-body">
-      <!-- Card stats -->
-      
+      <!-- Estadísticas opcionales -->
     </div>
   </div>
 </div>
+
+<div class="container mt-4 conductores-container">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0 text-primary">Gestión de Conductores</h3>
+    <button class="btn btn-success" (click)="nuevo()">
+      <i class="fas fa-plus me-1"></i> Registrar Nuevo Conductor
+    </button>
+  </div>
+
+  <!-- Mensaje de error global (fuera del modal) -->
+  <div *ngIf="errorMessage && !mostrarFormulario" class="alert alert-danger alert-dismissible fade show" role="alert">
+    <strong>¡Error!</strong> {{ errorMessage }}
+    <button type="button" class="btn-close" aria-label="Close" (click)="errorMessage = null"></button>
+  </div>
+
+  <!-- Campo de búsqueda/filtro -->
+  <div class="input-group mb-3">
+    <span class="input-group-text"><i class="fas fa-search"></i></span>
+    <input
+      type="text"
+      class="form-control"
+      placeholder="Buscar por nombres, apellidos, documento o licencia..."
+      [(ngModel)]="filtroTexto"
+      (input)="filtrarConductores()"
+      name="filtroConductor"
+    />
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle text-center">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>Nombres</th>
+          <th>Apellidos</th>
+          <th>Razón Social</th>
+          <th>Documento</th>
+          <th>Tipo Doc.</th>
+          <th>Teléfono</th>
+          <th>Correo</th>
+          <th>Licencia</th>
+          <th>Rol</th>
+          <th>Dirección</th>
+          <th>N° Municipal</th>
+          <!-- OCULTADO: <th>Tipo Vía</th> -->
+          <!-- OCULTADO: <th>Distrito</th> -->
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of listaFiltrada; trackBy: trackById">
+          <td>{{ c.idPersona }}</td>
+          <td>{{ c.nombres }}</td>
+          <td>{{ c.apellidos }}</td>
+          <td>{{ c.razonSocial || 'N/A' }}</td>
+          <td>{{ c.numeroDocumento }}</td>
+          <td>{{ c.tipoDocumento }}</td>
+          <td>{{ c.celular }}</td>
+          <td>{{ c.correo }}</td>
+          <td>{{ c.licencia }}</td>
+          <td>{{ c.rol }}</td>
+          <td>{{ c.direccion || 'N/A' }}</td>
+          <td>{{ c.nMunicipal || 'N/A' }}</td>
+          <!-- OCULTADO: <td>{{ c.tipoVia || 'N/A' }}</td> -->
+          <!-- OCULTADO: <td>{{ c.idDistrito || 'N/A' }}</td> -->
+          <td>
+            <button class="btn btn-sm btn-warning me-1" (click)="editar(c)">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-danger" (click)="eliminar(c.idPersona!)">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="listaFiltrada.length === 0">
+          <!-- COLSPAN AJUSTADO: de 15 a 13 (12 columnas de datos + 1 de acciones) -->
+          <td colspan="13" class="text-center text-muted">No se encontraron conductores.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal formulario de Conductor -->
+  <div class="modal-backdrop" *ngIf="mostrarFormulario">
+    <div class="modal-form">
+      <h4 class="mb-4 text-primary">{{ modoEdicion ? 'Editar Conductor' : 'Registrar Conductor' }}</h4>
+
+      <!-- Mensaje de error dentro del modal -->
+      <div *ngIf="errorMessage && mostrarFormulario" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>¡Error!</strong> {{ errorMessage }}
+        <button type="button" class="btn-close" aria-label="Close" (click)="errorMessage = null"></button>
+      </div>
+
+      <form (ngSubmit)="guardar()" #formConductor="ngForm" novalidate>
+        <div class="row g-3">
+          <!-- Nombres -->
+          <div class="col-md-6">
+            <label for="nombres" class="form-label">Nombres:</label>
+            <input type="text" class="form-control" id="nombres" placeholder="Nombres del conductor" [(ngModel)]="conductor.nombres" name="nombres" required #nombres="ngModel">
+            <div *ngIf="nombres.invalid && (nombres.dirty || nombres.touched)" class="text-danger small">
+              Los nombres son requeridos.
+            </div>
+          </div>
+          <!-- Apellidos -->
+          <div class="col-md-6">
+            <label for="apellidos" class="form-label">Apellidos:</label>
+            <input type="text" class="form-control" id="apellidos" placeholder="Apellidos del conductor" [(ngModel)]="conductor.apellidos" name="apellidos" required #apellidos="ngModel">
+            <div *ngIf="apellidos.invalid && (apellidos.dirty || apellidos.touched)" class="text-danger small">
+              Los apellidos son requeridos.
+            </div>
+          </div>
+          <!-- Razón Social -->
+          <div class="col-md-6">
+            <label for="razonSocial" class="form-label">Razón Social (Opcional):</label>
+            <input type="text" class="form-control" id="razonSocial" placeholder="Razón Social" [(ngModel)]="conductor.razonSocial" name="razonSocial">
+          </div>
+          <!-- Número de Documento -->
+          <div class="col-md-6">
+            <label for="numeroDocumento" class="form-label">Número de Documento:</label>
+            <input type="text" class="form-control" id="numeroDocumento" placeholder="Número de Documento" [(ngModel)]="conductor.numeroDocumento" name="numeroDocumento" required #numeroDocumento="ngModel">
+            <div *ngIf="numeroDocumento.invalid && (numeroDocumento.dirty || numeroDocumento.touched)" class="text-danger small">
+              El número de documento es requerido.
+            </div>
+          </div>
+          <!-- Teléfono -->
+          <div class="col-md-6">
+            <label for="telefono" class="form-label">Teléfono:</label>
+            <input type="text" class="form-control" id="telefono" placeholder="Número de teléfono" [(ngModel)]="conductor.telefono" name="telefono" required #telefono="ngModel">
+            <div *ngIf="telefono.invalid && (telefono.dirty || telefono.touched)" class="text-danger small">
+              El teléfono es requerido.
+            </div>
+          </div>
+          <!-- Correo -->
+          <div class="col-md-6">
+            <label for="correo" class="form-label">Correo:</label>
+            <input type="email" class="form-control" id="correo" placeholder="Correo electrónico" [(ngModel)]="conductor.correo" name="correo" required #correo="ngModel">
+            <div *ngIf="correo.invalid && (correo.dirty || correo.touched)" class="text-danger small">
+              El correo es requerido y debe ser válido.
+            </div>
+          </div>
+          <!-- Tipo de Documento (SELECT) -->
+          <div class="col-md-6">
+            <label for="idTipoDoc" class="form-label">Tipo de Documento:</label>
+            <select class="form-select custom-select-style" id="idTipoDoc" [(ngModel)]="conductor.idTipoDoc" name="idTipoDoc" required #idTipoDoc="ngModel">
+              <option [value]="null" disabled>Seleccione una opción</option>
+              <option *ngFor="let tipoDoc of tiposDocumentoDropdown" [value]="tipoDoc.idTipoDoc">{{ tipoDoc.nombreDoc }}</option>
+            </select>
+            <div *ngIf="idTipoDoc.invalid && (idTipoDoc.dirty || idTipoDoc.touched)" class="text-danger small">
+              El tipo de documento es requerido.
+            </div>
+          </div>
+          <!-- Licencia -->
+          <div class="col-md-6">
+            <label for="licencia" class="form-label">Licencia:</label>
+            <input type="text" class="form-control" id="licencia" placeholder="Número de licencia" [(ngModel)]="conductor.licencia" name="licencia" required #licencia="ngModel">
+            <div *ngIf="licencia.invalid && (licencia.dirty || licencia.touched)" class="text-danger small">
+              La licencia es requerida.
+            </div>
+          </div>
+          <!-- OCULTADO: Rol (SELECT) -->
+          <!--
+          <div class="col-md-6">
+            <label for="idRol" class="form-label">Rol:</label>
+            <select class="form-select custom-select-style" id="idRol" [(ngModel)]="conductor.idRol" name="idRol" required #idRol="ngModel">
+              <option [value]="null" disabled>Seleccione una opción</option>
+              <option *ngFor="let rol of rolesDropdown" [value]="rol.idRol">{{ rol.nombreRol }}</option>
+            </select>
+            <div *ngIf="idRol.invalid && (idRol.dirty || idRol.touched)" class="text-danger small">
+              El rol es requerido.
+            </div>
+          </div>
+          -->
+          <!-- Dirección -->
+          <div class="col-md-6">
+            <label for="direccion" class="form-label">Dirección (Opcional):</label>
+            <input type="text" class="form-control" id="direccion" placeholder="Dirección completa" [(ngModel)]="conductor.direccion" name="direccion">
+          </div>
+          <!-- N° Municipal -->
+          <div class="col-md-6">
+            <label for="nMunicipal" class="form-label">N° Municipal (Opcional):</label>
+            <input type="text" class="form-control" id="nMunicipal" placeholder="Número Municipal" [(ngModel)]="conductor.nMunicipal" name="nMunicipal">
+          </div>
+          <!-- OCULTADO: Tipo de Vía (SELECT) -->
+          <!--
+          <div class="col-md-6">
+            <label for="idTipoVia" class="form-label">Tipo de Vía (Opcional):</label>
+            <select class="form-select custom-select-style" id="idTipoVia" [(ngModel)]="conductor.idTipoVia" name="idTipoVia" #idTipoVia="ngModel">
+              <option [value]="null">Seleccione una opción</option>
+              <option *ngFor="let tipoVia of tiposViaDropdown" [value]="tipoVia.idTipoVia">{{ tipoVia.nombreTipoVia }}</option>
+            </select>
+          </div>
+          -->
+          <!-- OCULTADO: Distrito (SELECT) -->
+          <!--
+          <div class="col-md-6">
+            <label for="idDistrito" class="form-label">Distrito (Opcional):</label>
+            <select class="form-select custom-select-style" id="idDistrito" [(ngModel)]="conductor.idDistrito" name="idDistrito" #idDistrito="ngModel">
+              <option [value]="null">Seleccione una opción</option>
+              <option *ngFor="let distrito of distritosDropdown" [value]="distrito.idDistrito">{{ distrito.nombreDistrito }}</option>
+            </select>
+          </div>
+          -->
+        </div>
+
+        <div class="mt-4 d-flex justify-content-end">
+          <button type="button" class="btn btn-secondary me-2" (click)="cerrar()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="formConductor.invalid">
+            <i class="fas fa-save me-2"></i>{{ modoEdicion ? 'Guardar Cambios' : 'Registrar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Estilos para el modal (puedes mover esto a tu archivo SCSS global o del componente) -->
+<style>
+  .modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1050; /* Asegura que esté por encima de otros elementos */
+  }
+
+  .modal-form {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    width: 90%;
+    max-width: 700px; /* Ancho máximo para el modal de conductor (más campos) */
+    z-index: 1051;
+    position: relative;
+    max-height: 90vh; /* Limita la altura del modal */
+    overflow-y: auto; /* Habilita el scroll si el contenido es muy largo */
+  }
+  .conductores-container .table thead th {
+    vertical-align: middle;
+  }
+  .conductores-container .table tbody td {
+    vertical-align: middle;
+  }
+
+  /* Estilo personalizado para los selectores (desplegables) */
+  .custom-select-style {
+    border-radius: 0.5rem; /* Bordes redondeados */
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* Sombra sutil */
+    border: 1px solid #ced4da; /* Borde estándar de Bootstrap */
+    background-color: #fff; /* Fondo blanco */
+    padding: 0.375rem 2.25rem 0.375rem 0.75rem; /* Ajuste de padding */
+    -webkit-appearance: none; /* Elimina estilos por defecto de navegador */
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e"); /* Icono de flecha personalizado */
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
+  }
+
+  /* Estilo para el foco */
+  .custom-select-style:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  }
+</style>

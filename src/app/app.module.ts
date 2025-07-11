@@ -15,6 +15,8 @@ import { AppRoutingModule } from './app.routing';
 import { ComponentsModule } from './components/components.module';
 import { ProductosComponent } from './pages/productos/productos.component';
 import { historialComponent } from './pages/historialProductos/historialProductos.component';
+import { vehiculosComponent } from './pages/vehiculos/vehiculos.component';
+import { conductoresComponent } from './pages/conductores/conductores.component';
 import { EnviosProductosComponent } from './pages/enviosProductos/enviosProductos.component';
 
 
@@ -33,6 +35,8 @@ import { EnviosProductosComponent } from './pages/enviosProductos/enviosProducto
     AppComponent,
     AdminLayoutComponent,
     AuthLayoutComponent,
+    vehiculosComponent,
+    conductoresComponent,
     ProductosComponent,
     historialComponent,
     EnviosProductosComponent
