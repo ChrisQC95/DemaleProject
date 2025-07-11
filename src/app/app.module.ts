@@ -1,7 +1,9 @@
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { BrowserModule } from '@angular/platform-browser';
 import { HttpClientModule } from '@angular/common/http';
+import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
 
@@ -18,7 +20,7 @@ import { historialComponent } from './pages/historialProductos/historialProducto
 import { vehiculosComponent } from './pages/vehiculos/vehiculos.component';
 import { conductoresComponent } from './pages/conductores/conductores.component';
 import { EnviosProductosComponent } from './pages/enviosProductos/enviosProductos.component';
-
+import { EmpleadosComponent } from './pages/empleados/empleados.component';
 
 @NgModule({
   imports: [
@@ -29,7 +31,10 @@ import { EnviosProductosComponent } from './pages/enviosProductos/enviosProducto
     ComponentsModule,
     NgbModule,
     RouterModule,
-    AppRoutingModule
+    AppRoutingModule,
+    BrowserModule,
+    CommonModule,
+    
   ],
   declarations: [
     AppComponent,
@@ -39,7 +44,8 @@ import { EnviosProductosComponent } from './pages/enviosProductos/enviosProducto
     conductoresComponent,
     ProductosComponent,
     historialComponent,
-    EnviosProductosComponent
+    EnviosProductosComponent,
+    EmpleadosComponent
   ],
   providers: [],
   bootstrap: [AppComponent]
