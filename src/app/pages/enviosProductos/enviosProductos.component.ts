@@ -15,17 +15,19 @@ import { DistritoService } from '../../services/distrito.service';
 import { Distrito } from '../../interfaces/distrito.interface'; // Asume que esta es la interfaz correcta
 import { HistorialProducto } from '../../services/producto.service';
 import { EnvioCreacionDto } from '../../interfaces/envio-creacion-dto.interface';
+import { EnvioListadoDto } from '../../interfaces/envio-listado-dto.interface';
 
 interface Envio {
   id: string;
   destino: string;
   fechaSalida: Date;
-  fechaLlegada: Date;
+  fechaLlegada: Date | null;
   chofer: string;
   acopio: string;
   vehiculo: string;
   ruta: string;
   estado: string;
+  observacion: string | null;
 }
 
 interface ProductoHistorial {
@@ -112,6 +114,7 @@ export class EnviosProductosComponent implements OnInit {
   datosPaginados: Envio[] = [];
 
   ngOnInit(): void {
+    this.loadEnvios();
     this.aplicarFiltros();
     this.loadConductores();
     this.loadVehiculos();
@@ -120,7 +123,20 @@ export class EnviosProductosComponent implements OnInit {
     this.loadPuntosAcopio();
     this.loadEstadosEnvio();
   }
-  
+  loadEnvios(): void {
+    this.envioService.obtenerTodosLosEnvios().subscribe({
+      next: (data: EnvioListadoDto[]) => {
+        // Mapear EnvioListadoDto[] a Envio[]
+        this.envios = data.map(dto => this.mapEnvioListadoDtoToEnvio(dto));
+        console.log('Envios cargados y mapeados:', this.envios);
+        this.aplicarFiltros(); // Aplica filtros y paginación después de cargar los datos
+      },
+      error: (err) => {
+        console.error('Error al cargar envíos:', err);
+        // Podrías mostrar un mensaje de error al usuario
+      }
+    });
+  }
   loadConductores(): void {
     this.conductorService.getConductoresForDropdown().subscribe(
       data => {
@@ -437,6 +453,19 @@ export class EnviosProductosComponent implements OnInit {
       }
     });
   }
-
+  private mapEnvioListadoDtoToEnvio(dto: EnvioListadoDto): Envio {
+    return {
+      id: dto.idEnvio.toString(), // Convertir number a string para el ID local
+      destino: dto.distritoDestinoNombre,
+      fechaSalida: new Date(dto.fechSalida), // Convertir string a Date
+      fechaLlegada: dto.fechLlegada ? new Date(dto.fechLlegada) : null, // Convertir string a Date o null
+      chofer: dto.conductorNombreCompleto,
+      acopio: dto.puntoAcopioNombre,
+      vehiculo: dto.vehiculoDescripcion,
+      ruta: dto.rutaDescripcion,
+      estado: dto.estadoEnvioNombre,
+      observacion: dto.observacion // Asegúrate de incluir la observación
+    };
+  }
 
 }
