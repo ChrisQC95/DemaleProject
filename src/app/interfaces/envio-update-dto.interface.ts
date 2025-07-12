@@ -1,3 +1,4 @@
+import { HistorialPuntoDescansoDto } from './historial-punto-descanso-dto.interface';
 export interface EnvioUpdateDto {
   idEnvio: number | null;
   idConductor: number | null;
@@ -9,4 +10,5 @@ export interface EnvioUpdateDto {
   fechSalida: string | null;
   fechLlegada: string | null;
   observacion: string | null;
+  historialPuntosDescanso?: HistorialPuntoDescansoDto[];
 }

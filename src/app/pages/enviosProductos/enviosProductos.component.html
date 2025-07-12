@@ -65,6 +65,7 @@
                 <th scope="col">DESTINO</th>
                 <th scope="col">FECHA SALIDA</th>
                 <th scope="col">FECHA LLEGADA</th>
+                <th scope="col">PUNTO DE DESCANSO</th>
                 <th scope="col">CHOFER</th>
                 <th scope="col">PUNTO DE ACOPIO</th>
                 <th scope="col">VEHÍCULO</th>
@@ -95,6 +96,11 @@
                 <td>{{ envio.destino }}</td>
                 <td>{{ envio.fechaSalida | date: 'yyyy-MM-dd' }}</td>
                 <td>{{ envio.fechaLlegada | date: 'yyyy-MM-dd' }}</td>
+                <td>
+                  <button class="btn btn-sm btn-info ms-2" (click)="openRegistrarParadaModal(registrarParadaModal, envio)">
+                      <i class="fas fa-map-marker-alt"></i> Registrar Parada
+                  </button>
+                </td>
                 <td>{{ envio.chofer }}</td>
                 <td>{{ envio.acopio }}</td>
                 <td>{{ envio.vehiculo }}</td>
@@ -275,3 +281,62 @@
     </div>
   </div>
 </div>
+<ng-template #registrarParadaModal let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title" id="registrarParadaModalLabel">Registrar Parada o Punto de Descanso</h5>
+    <button type="button" class="close" aria-label="Close" (click)="modal.dismiss('Cross click')">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <form>
+      <div class="row mb-3 align-items-center">
+        <div class="col-md-6">
+          <div class="form-group mb-0">
+            <label for="puntoDescansoSelect">Punto de Descanso:</label>
+            <select id="puntoDescansoSelect" class="form-control" [(ngModel)]="puntoDescansoSeleccionado" name="puntoDescansoSelect" required [disabled]="isParadaModalDisabled">
+              <option [value]="null" disabled selected>Seleccione un punto de descanso</option>
+              <!-- Reutilizamos puntosAcopioDropdown ya que la estructura es compatible -->
+              <option *ngFor="let pd of puntosDescansoDropdown" [value]="pd.idPuntoDescanso">{{ pd.puntoDescanso }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-check mt-3 mt-md-0">
+            <input class="form-check-input" type="checkbox" id="llegadaFinalCheckbox" [(ngModel)]="isLlegadaFinal" name="llegadaFinalCheckbox" [disabled]="isParadaModalDisabled">
+            <label class="form-check-label" for="llegadaFinalCheckbox">
+              Marcar como Llegada Final
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <h5 class="mt-4">Historial de Puntos de Descanso para Envío ID: {{ selectedEnvioIdForParada }}</h5>
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+          <thead>
+            <tr>
+              <th>ID Historial</th>
+              <th>Punto de Descanso</th>
+              <th>Fecha y Hora de Registro</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="historialPuntosDescanso.length === 0">
+              <td colspan="3" class="text-center">No hay historial de puntos de descanso para este envío.</td>
+            </tr>
+            <tr *ngFor="let historial of historialPuntosDescanso">
+              <td>{{ historial.idHistorialDescanso }}</td>
+              <td>{{ historial.nombrePuntoDescanso }}</td>
+              <td>{{ historial.fechaHoraRegistro | date:'yyyy-MM-dd HH:mm' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss('cancel')">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="registrarParada()" [disabled]="isParadaModalDisabled">Guardar</button>
+  </div>
+</ng-template>

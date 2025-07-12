@@ -18,6 +18,10 @@ import { EnvioCreacionDto } from '../../interfaces/envio-creacion-dto.interface'
 import { EnvioListadoDto } from '../../interfaces/envio-listado-dto.interface';
 import { Observable } from 'rxjs';
 import { EnvioUpdateDto } from '../../interfaces/envio-update-dto.interface';
+import { PuntoDescansoRegistroDto } from '../../interfaces/punto-descanso-registro-dto.interface';
+import { HistorialPuntoDescansoDto } from '../../interfaces/historial-punto-descanso-dto.interface';
+import { PuntoDescansoService } from '../../services/punto-descanso.service'; // ¡NUEVA IMPORTACIÓN!
+import { PuntoDescansoDropdown } from '../../interfaces/punto-descanso-dropdown.interface';
 
 interface Envio {
   id: string;
@@ -52,6 +56,7 @@ interface ProductoHistorial {
 })
 export class EnviosProductosComponent implements OnInit {
   @ViewChild('envioModal') envioModalContent: any;
+  @ViewChild('registrarParadaModal') registrarParadaModalContent: any;
 
   conductores: ConductorDropdown[] = [];
   vehiculos: VehiculoDropdown[] = [];
@@ -60,6 +65,7 @@ export class EnviosProductosComponent implements OnInit {
   puntosAcopioDropdown: { id: number; nombre: string }[] = [];
   distritosDropdown: { id: number; nombre: string }[] = [];
   estadosEnvioDropdown: { id: number, nombre: string }[] = [];
+  puntosDescansoDropdown: PuntoDescansoDropdown[] = [];
 
   nuevoEnvio: {
     idEnvio: number | null;
@@ -70,6 +76,7 @@ export class EnviosProductosComponent implements OnInit {
     idDestino: number | null; // Corresponde al distrito de destino
     fechaSalida: string | null; // Para vincular con el input type="date"
     observacion: string | null;
+    fechaLlegada: string | null;
     fechaInicioProductos: string | null; // Para el filtro de fecha de productos
     fechaFinProductos: string | null; // Para el filtro de fecha de productos
   } = {
@@ -81,10 +88,17 @@ export class EnviosProductosComponent implements OnInit {
     idDestino: null,
     fechaSalida: null,
     observacion: null,
+    fechaLlegada: null,
     fechaInicioProductos: null,
     fechaFinProductos: null,
   };
   private currentEnvioUpdateDto: EnvioUpdateDto | null = null;
+
+  selectedEnvioIdForParada: number | null = null;
+  puntoDescansoSeleccionado: number | null = null;
+  isLlegadaFinal: boolean = false;
+  historialPuntosDescanso: HistorialPuntoDescansoDto[] = [];
+  isParadaModalDisabled: boolean = false;
 
   constructor(private modalService: NgbModal,
     private conductorService: ConductorService,
@@ -92,7 +106,8 @@ export class EnviosProductosComponent implements OnInit {
     private rutaService: RutaService,
     private clienteService: ClienteService,
     private productoService: ProductoService,
-    private envioService: EnviosService
+    private envioService: EnviosService,
+    private puntoDescansoService: PuntoDescansoService
   ) {}
 
   // Lista completa
@@ -127,6 +142,7 @@ export class EnviosProductosComponent implements OnInit {
     this.loadDistritos();
     this.loadPuntosAcopio();
     this.loadEstadosEnvio();
+    this.loadPuntosDescanso();
   }
   loadEnvios(): void {
     this.envioService.obtenerTodosLosEnvios().subscribe({
@@ -197,6 +213,37 @@ export class EnviosProductosComponent implements OnInit {
       console.log('Puntos de Acopio cargados:', this.puntosAcopioDropdown);
     });
   }
+  loadPuntosDescanso(): void { 
+    console.log('Intentando cargar puntos de descanso...');
+    this.puntoDescansoService.getPuntosDescanso().subscribe(
+      data => {
+        console.log('Respuesta cruda del servicio de Puntos de Descanso:', data); // <-- ¡NUEVO LOG!
+        if (Array.isArray(data)) {
+          this.puntosDescansoDropdown = data;
+          console.log('Puntos de Descanso cargados (después de asignación):', this.puntosDescansoDropdown);
+          if (this.puntosDescansoDropdown.length === 0) {
+            console.warn('ADVERTENCIA: La lista de puntos de descanso cargada está vacía.');
+          }
+        } else {
+          console.error('ERROR: La respuesta del servicio de Puntos de Descanso no es un array:', data);
+          this.puntosDescansoDropdown = []; // Asegurarse de que sea un array vacío
+        }
+      },
+      error => {
+        console.error('Error al cargar puntos de descanso:', error);
+        // Detalles adicionales del error para depuración
+        if (error.status) {
+          console.error('Código de estado HTTP:', error.status);
+        }
+        if (error.message) {
+          console.error('Mensaje de error:', error.message);
+        }
+        if (error.error) {
+          console.error('Detalles del error (cuerpo de la respuesta):', error.error);
+        }
+      }
+    );
+  }
   loadEstadosEnvio(): void {
     this.productoService.getEstadosEnvio().subscribe(data => {
       this.estadosEnvioDropdown = data.map(e => ({
@@ -225,6 +272,7 @@ export class EnviosProductosComponent implements OnInit {
             idAcopio: data.idPuntoAcopio, // Mapea idPuntoAcopio a idAcopio
             idDestino: data.idDistrito,   // Mapea idDistrito a idDestino
             fechaSalida: data.fechSalida,
+            fechaLlegada: data.fechLlegada,
             observacion: data.observacion,
             fechaInicioProductos: null, // No relevante para edición de envío
             fechaFinProductos: null // No relevante para edición de envío
@@ -250,6 +298,7 @@ export class EnviosProductosComponent implements OnInit {
         idDestino: null,
         fechaSalida: formattedToday, // Fecha de hoy por defecto para creación
         observacion: null,
+        fechaLlegada: null,
         fechaInicioProductos: formattedToday,
         fechaFinProductos: formattedToday,
       };
@@ -257,6 +306,25 @@ export class EnviosProductosComponent implements OnInit {
       this.loadProductosEnAlmacen(); // Cargar productos solo para creación
       this.modalService.open(modalRef, { size: 'xl', centered: true });
     }
+  }
+  openRegistrarParadaModal(modalRef: any, envio: Envio): void {
+    this.selectedEnvioIdForParada = Number(envio.id);
+    this.puntoDescansoSeleccionado = null; // Reiniciar selección
+    this.isLlegadaFinal = false; // Reiniciar checkbox
+    this.historialPuntosDescanso = []; // Limpiar historial previo
+    this.isParadaModalDisabled = !!envio.fechaLlegada;
+    
+    this.envioService.obtenerEnvioPorId(this.selectedEnvioIdForParada).subscribe({
+      next: (data: EnvioUpdateDto) => {
+        this.historialPuntosDescanso = data.historialPuntosDescanso || [];
+        console.log('Historial de puntos de descanso cargado:', this.historialPuntosDescanso);
+        this.modalService.open(modalRef, { size: 'lg', centered: true }); // Abrir el modal de parada
+      },
+      error: (err) => {
+        console.error('Error al cargar el historial de puntos de descanso:', err);
+        alert('No se pudo cargar el historial de puntos de descanso para el envío.');
+      }
+    });
   }
   loadProductosEnAlmacen(): void {
     this.productoService.getProductosEnAlmacen().subscribe(
@@ -543,5 +611,36 @@ export class EnviosProductosComponent implements OnInit {
       observacion: dto.observacion // Asegúrate de incluir la observación
     };
   }
+  registrarParada(): void {
+    if (this.selectedEnvioIdForParada === null || this.puntoDescansoSeleccionado === null) {
+      alert('Por favor, seleccione un punto de descanso.');
+      return;
+    }
 
+    const registroDto: PuntoDescansoRegistroDto = {
+      idPuntoDescanso: this.puntoDescansoSeleccionado,
+      llegadaFinal: this.isLlegadaFinal
+    };
+
+    this.envioService.registrarPuntoDescanso(this.selectedEnvioIdForParada, registroDto).subscribe({
+      next: (response) => {
+        console.log('Parada registrada exitosamente:', response);
+        alert('Parada registrada con éxito.');
+        this.modalService.dismissAll(); // Cierra el modal de parada
+        this.loadEnvios(); // Recarga la lista principal de envíos para reflejar los cambios
+      },
+      error: (error) => {
+        console.error('Error al registrar la parada:', error);
+        let errorMessage = 'Error al registrar la parada. Por favor, intente de nuevo.';
+        if (error.error && error.error.message) {
+          errorMessage = error.error.message;
+        } else if (error.status === 404) {
+          errorMessage = 'Envío o punto de descanso no encontrado.';
+        } else if (error.status === 500) {
+          errorMessage = 'Error interno del servidor al registrar la parada.';
+        }
+        alert(errorMessage);
+      }
+    });
+  }
 }

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { EnvioCreacionDto } from '../interfaces/envio-creacion-dto.interface';
 import { EnvioListadoDto } from '../interfaces/envio-listado-dto.interface';
 import { EnvioUpdateDto } from '../interfaces/envio-update-dto.interface';
+import { PuntoDescansoRegistroDto } from '../interfaces/punto-descanso-registro-dto.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -34,5 +35,9 @@ export class EnviosService {
   // Y un método para eliminar
   eliminarEnvio(idEnvio: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${idEnvio}`);
+  }
+
+  registrarPuntoDescanso(idEnvio: number, registroDto: PuntoDescansoRegistroDto): Observable<EnvioListadoDto> {
+    return this.http.post<EnvioListadoDto>(`${this.apiUrl}/${idEnvio}/registrar-descanso`, registroDto);
   }
 }
