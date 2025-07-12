@@ -21,6 +21,7 @@ import { vehiculosComponent } from './pages/vehiculos/vehiculos.component';
 import { conductoresComponent } from './pages/conductores/conductores.component';
 import { EnviosProductosComponent } from './pages/enviosProductos/enviosProductos.component';
 import { EmpleadosComponent } from './pages/empleados/empleados.component';
+import { RutasComponent } from './pages/rutas/rutas.component';
 
 @NgModule({
   imports: [
@@ -45,7 +46,8 @@ import { EmpleadosComponent } from './pages/empleados/empleados.component';
     ProductosComponent,
     historialComponent,
     EnviosProductosComponent,
-    EmpleadosComponent
+    EmpleadosComponent,
+    RutasComponent
   ],
   providers: [],
   bootstrap: [AppComponent]

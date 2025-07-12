@@ -21,30 +21,18 @@
         <!-- Filtros + Botón -->
         <div class="card-body pt-0 pb-3">
           <div class="row">
-            <div class="col-md-6 col-lg-4 mb-3">
+            <div class="col-md-6 col-lg-8 mb-3"> <!-- Columna más ancha para el input de búsqueda -->
               <div class="input-group input-group-alternative">
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="fas fa-search"></i></span>
                 </div>
-                <input class="form-control form-control-alternative" placeholder="Buscar Rutas" type="text">
+                <input class="form-control form-control-alternative" placeholder="Buscar por Código o Nombre de Ruta" type="text"
+                       [(ngModel)]="searchTerm" (input)="aplicarFiltros()" name="searchTerm">
               </div>
             </div>
-            <div class="col-md-3 col-lg-2 mb-3">
-              <select class="form-control form-control-alternative">
-                <option value="">Filtro</option>
-                <option value="codigo">Código de Ruta</option>
-                <option value="nombre">Nombre de Ruta</option>
-              </select>
-            </div>
-            <div class="col-md-3 col-lg-2 mb-3">
-              <select class="form-control form-control-alternative">
-                <option value="">Estados</option>
-                <option value="activa">Activa</option>
-                <option value="inactiva">Inactiva</option>
-              </select>
-            </div>
-            <div class="col-md-12 col-lg-4 mb-3">
-              <button class="btn btn-primary" style="margin-left: 160px;" (click)="openRutaModal(rutaModal)">
+            <!-- ELIMINADO: Los dos select de filtro han sido removidos -->
+            <div class="col-md-6 col-lg-4 mb-3 d-flex justify-content-end"> <!-- Ajustado para el botón -->
+              <button class="btn btn-primary" (click)="openRutaModal(rutaModalContent)">
                 <i class="ni ni-fat-add mr-1"></i>Agregar Ruta
               </button>
             </div>
@@ -56,22 +44,74 @@
           <table class="table align-items-center table-flush">
             <thead class="thead-light">
               <tr>
+                <th scope="col">ID</th> <!-- Añadido ID para referencia visual -->
                 <th scope="col">CÓDIGO DE RUTA</th>
                 <th scope="col">NOMBRE DE RUTA</th>
                 <th scope="col">OBSERVACIÓN</th>
-                <th scope="col"></th>
+                <th scope="col">ACCIONES</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngIf="true"> 
-                <td colspan="4" class="text-center py-4">
+              <!-- Mensaje si no hay rutas filtradas -->
+              <tr *ngIf="datosPaginados.length === 0">
+                <td colspan="5" class="text-center py-4">
                   <div class="alert alert-info mb-0">
                     No hay rutas para mostrar.
                   </div>
                 </td>
               </tr>
+              <!-- Iteración sobre las rutas paginadas -->
+              <tr *ngFor="let ruta of datosPaginados">
+                <td>{{ ruta.idRuta }}</td>
+                <td>{{ ruta.serialRuta }}</td>
+                <td>{{ ruta.nombreRuta }}</td>
+                <td>{{ ruta.glosa || 'N/A' }}</td>
+                <td>
+                  <button class="btn btn-sm btn-info me-2" (click)="openRutaModal(rutaModalContent, ruta)">
+                    <i class="fas fa-edit"></i> Editar
+                  </button>
+                  <button class="btn btn-sm btn-danger" (click)="deleteRuta(ruta.idRuta)">
+                    <i class="fas fa-trash-alt"></i> Eliminar
+                  </button>
+                </td>
+              </tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- Paginación -->
+        <div class="card-footer py-4" *ngIf="totalRegistros > pageSize">
+          <nav aria-label="...">
+            <ul class="pagination justify-content-end mb-0">
+              <li class="page-item" [class.disabled]="pageIndex === 0">
+                <a class="page-link" (click)="primeraPagina()" tabindex="-1">
+                  <i class="fas fa-angle-double-left"></i>
+                  <span class="sr-only">Primera</span>
+                </a>
+              </li>
+              <li class="page-item" [class.disabled]="pageIndex === 0">
+                <a class="page-link" (click)="anteriorPagina()" tabindex="-1">
+                  <i class="fas fa-angle-left"></i>
+                  <span class="sr-only">Anterior</span>
+                </a>
+              </li>
+              <li class="page-item" *ngFor="let page of getPageNumbers()" [class.active]="page - 1 === pageIndex">
+                <a class="page-link" (click)="irAPagina(page)">{{ page }}</a>
+              </li>
+              <li class="page-item" [class.disabled]="(pageIndex + 1) * pageSize >= totalRegistros">
+                <a class="page-link" (click)="siguientePagina()">
+                  <i class="fas fa-angle-right"></i>
+                  <span class="sr-only">Siguiente</span>
+                </a>
+              </li>
+              <li class="page-item" [class.disabled]="(pageIndex + 1) * pageSize >= totalRegistros">
+                <a class="page-link" (click)="ultimaPagina()">
+                  <i class="fas fa-angle-double-right"></i>
+                  <span class="sr-only">Última</span>
+                </a>
+              </li>
+            </ul>
+          </nav>
         </div>
 
       </div>
@@ -79,9 +119,10 @@
   </div>
 </div>
 
+<!-- Modal para Agregar/Editar Ruta -->
 <ng-template #rutaModal let-modal>
   <div class="modal-header">
-    <h5 class="modal-title">Agregar Ruta</h5>
+    <h5 class="modal-title" id="modal-basic-title">{{ isEditingRuta ? 'Editar Ruta' : 'Agregar Ruta' }}</h5>
     <button type="button" class="close" (click)="modal.dismiss('Cross click')" aria-label="Close">
       <span aria-hidden="true">&times;</span>
     </button>
@@ -90,25 +131,30 @@
     <form>
       <div class="row">
         <div class="col-md-6 mb-3">
-          <label for="codigoRutaInput">CÓDIGO DE RUTA</label>
-          <input type="text" class="form-control" id="codigoRutaInput" placeholder="Ingrese código de ruta">
+          <label for="serialRutaInput">CÓDIGO DE RUTA</label>
+          <input type="text" class="form-control" id="serialRutaInput" placeholder="Ingrese código de ruta"
+                 [(ngModel)]="currentRuta.serialRuta" name="serialRuta" required>
         </div>
         <div class="col-md-6 mb-3">
           <label for="nombreRutaInput">NOMBRE DE RUTA</label>
-          <input type="text" class="form-control" id="nombreRutaInput" placeholder="Ingrese nombre de ruta">
+          <input type="text" class="form-control" id="nombreRutaInput" placeholder="Ingrese nombre de ruta"
+                 [(ngModel)]="currentRuta.nombreRuta" name="nombreRuta" required>
         </div>
       </div>
 
       <div class="row mt-3">
         <div class="col-md-12 mb-3">
-          <label for="observacionInput">OBSERVACIÓN</label>
-          <textarea class="form-control" id="observacionInput" rows="3" placeholder="Ingrese una observación..."></textarea>
+          <label for="glosaInput">OBSERVACIÓN</label>
+          <textarea class="form-control" id="glosaInput" rows="3" placeholder="Ingrese una observación..."
+                    [(ngModel)]="currentRuta.glosa" name="glosa"></textarea>
         </div>
       </div>
     </form>
   </div>
   <div class="modal-footer">
     <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
-    <button type="button" class="btn btn-primary">Guardar</button>
+    <button type="button" class="btn btn-primary" (click)="saveRuta()">
+      {{ isEditingRuta ? 'Actualizar' : 'Guardar' }}
+    </button>
   </div>
 </ng-template>
