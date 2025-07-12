@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { EnvioCreacionDto } from '../interfaces/envio-creacion-dto.interface';
 import { EnvioListadoDto } from '../interfaces/envio-listado-dto.interface';
+import { EnvioUpdateDto } from '../interfaces/envio-update-dto.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -21,8 +22,8 @@ export class EnviosService {
   }
 
   // Si planeas usar la edición, también necesitarás un método para obtener un envío por ID
-  obtenerEnvioPorId(idEnvio: number): Observable<EnvioListadoDto> {
-    return this.http.get<EnvioListadoDto>(`${this.apiUrl}/${idEnvio}`);
+  obtenerEnvioPorId(idEnvio: number): Observable<EnvioUpdateDto> {
+    return this.http.get<EnvioUpdateDto>(`${this.apiUrl}/${idEnvio}`);
   }
 
   // Y un método para actualizar

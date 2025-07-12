@@ -16,6 +16,8 @@ import { Distrito } from '../../interfaces/distrito.interface'; // Asume que est
 import { HistorialProducto } from '../../services/producto.service';
 import { EnvioCreacionDto } from '../../interfaces/envio-creacion-dto.interface';
 import { EnvioListadoDto } from '../../interfaces/envio-listado-dto.interface';
+import { Observable } from 'rxjs';
+import { EnvioUpdateDto } from '../../interfaces/envio-update-dto.interface';
 
 interface Envio {
   id: string;
@@ -60,6 +62,7 @@ export class EnviosProductosComponent implements OnInit {
   estadosEnvioDropdown: { id: number, nombre: string }[] = [];
 
   nuevoEnvio: {
+    idEnvio: number | null;
     idChofer: number | null;
     idVehiculo: number | null;
     idRuta: number | null;
@@ -70,6 +73,7 @@ export class EnviosProductosComponent implements OnInit {
     fechaInicioProductos: string | null; // Para el filtro de fecha de productos
     fechaFinProductos: string | null; // Para el filtro de fecha de productos
   } = {
+    idEnvio: null,
     idChofer: null,
     idVehiculo: null,
     idRuta: null,
@@ -80,6 +84,7 @@ export class EnviosProductosComponent implements OnInit {
     fechaInicioProductos: null,
     fechaFinProductos: null,
   };
+  private currentEnvioUpdateDto: EnvioUpdateDto | null = null;
 
   constructor(private modalService: NgbModal,
     private conductorService: ConductorService,
@@ -201,27 +206,59 @@ export class EnviosProductosComponent implements OnInit {
     });
   }
   
-  openModal(modalRef: any) {
-    const today = new Date();
-    const formattedToday = today.toISOString().split('T')[0];
-    this.nuevoEnvio = {
-      idChofer: null,
-      idVehiculo: null,
-      idRuta: null,
-      idAcopio: null,
-      idDestino: null,
-      fechaSalida: null,
-      observacion: null,
-      fechaInicioProductos: formattedToday,
-      fechaFinProductos: formattedToday,
-    };
+  openModal(modalRef: any, envio?: Envio) { // Acepta un 'envio' opcional
     this.productoSeleccionado = []; // Limpia las selecciones previas
-    this.seleccionarTodos = false; // Desmarca "Seleccionar todos"
-    this.loadProductosEnAlmacen();
-    this.modalService.open(modalRef, { size: 'xl', centered: true });
+    this.seleccionarTodos = false;
+
+    if (envio) {
+      // Modo edición: Cargar datos del envío
+      this.envioService.obtenerEnvioPorId(Number(envio.id)).subscribe({
+        next: (data: EnvioUpdateDto) => {
+          this.currentEnvioUpdateDto = data; // Almacena el DTO completo del backend
+
+          // Asignar solo los campos que se muestran en el formulario
+          this.nuevoEnvio = {
+            idEnvio: data.idEnvio,
+            idChofer: data.idConductor,
+            idVehiculo: data.idVehiculo,
+            idRuta: data.idRuta,
+            idAcopio: data.idPuntoAcopio, // Mapea idPuntoAcopio a idAcopio
+            idDestino: data.idDistrito,   // Mapea idDistrito a idDestino
+            fechaSalida: data.fechSalida,
+            observacion: data.observacion,
+            fechaInicioProductos: null, // No relevante para edición de envío
+            fechaFinProductos: null // No relevante para edición de envío
+          };
+          // No cargar productos en almacén para edición de envío existente
+          this.modalService.open(modalRef, { size: 'xl', centered: true });
+        },
+        error: (err) => {
+          console.error('Error al cargar envío para edición:', err);
+          alert('No se pudo cargar el envío para edición.');
+        }
+      });
+    } else {
+      // Modo creación: Inicializar nuevoEnvio con valores por defecto
+      const today = new Date();
+      const formattedToday = today.toISOString().split('T')[0];
+      this.nuevoEnvio = {
+        idEnvio: null, // Asegura que sea null para creación
+        idChofer: null,
+        idVehiculo: null,
+        idRuta: null,
+        idAcopio: null,
+        idDestino: null,
+        fechaSalida: formattedToday, // Fecha de hoy por defecto para creación
+        observacion: null,
+        fechaInicioProductos: formattedToday,
+        fechaFinProductos: formattedToday,
+      };
+      this.currentEnvioUpdateDto = null; // Limpiar el DTO de actualización en modo creación
+      this.loadProductosEnAlmacen(); // Cargar productos solo para creación
+      this.modalService.open(modalRef, { size: 'xl', centered: true });
+    }
   }
   loadProductosEnAlmacen(): void {
-    // Asumiendo que getProductosEnAlmacen() devuelve un Observable<HistorialProducto[]>
     this.productoService.getProductosEnAlmacen().subscribe(
       (data: HistorialProducto[]) => { // Esperamos un array de HistorialProducto
         this.allProductosModal = data.map(p => ({
@@ -385,67 +422,106 @@ export class EnviosProductosComponent implements OnInit {
   }
 
   editarEnvio(envio: Envio): void {
-    console.log('Editar envío:', envio);
-    // Aquí puedes abrir el modal y cargar los datos, por ejemplo
-    this.openModal(this.envioModalContent);
-    // Lógica para precargar los datos del envío en los campos del formulario
+    this.openModal(this.envioModalContent, envio);
   }
 
   eliminarEnvio(envio: Envio): void {
-    const confirmacion = confirm(`¿Estás seguro de eliminar el envío ${envio.id}?`);
+    const confirmacion = confirm(`¿Estás seguro de eliminar el envío ID: ${envio.id}?`);
     if (confirmacion) {
-      this.envios = this.envios.filter(e => e !== envio);
-      this.aplicarFiltros();
+      this.envioService.eliminarEnvio(Number(envio.id)).subscribe({
+        next: () => {
+          alert('Envío eliminado con éxito.');
+          this.loadEnvios();
+        },
+        error: (error) => {
+          console.error('Error al eliminar el envío:', error);
+          let errorMessage = 'Error al eliminar el envío. Por favor, intente de nuevo.';
+          if (error.status === 404) {
+            errorMessage = 'El envío no fue encontrado.';
+          } else if (error.status === 500) {
+            errorMessage = 'Error interno del servidor al eliminar el envío.';
+          }
+          alert(errorMessage);
+        }
+      });
     }
   }
   guardarEnvio(): void {
-    // 1. Validaciones básicas del frontend
+    // Validaciones básicas para campos obligatorios del formulario
     if (!this.nuevoEnvio.idChofer || !this.nuevoEnvio.idVehiculo || !this.nuevoEnvio.idRuta ||
         !this.nuevoEnvio.idAcopio || !this.nuevoEnvio.idDestino || !this.nuevoEnvio.fechaSalida) {
       alert('Por favor, complete todos los campos obligatorios del envío: Chofer, Vehículo, Ruta, Acopio, Destino y Fecha de Salida.');
       return;
     }
 
-    if (this.productoSeleccionado.length === 0) {
-      alert('Debe seleccionar al menos un producto para crear el envío.');
-      return;
+    let operation$: Observable<any>; // Observable para la operación (crear o actualizar)
+
+    if (this.nuevoEnvio.idEnvio) {
+      // Es una actualización
+      if (!this.currentEnvioUpdateDto) {
+        alert('Error: Datos de envío para actualización no cargados correctamente.');
+        return;
+      }
+
+      // Construye el DTO de actualización usando currentEnvioUpdateDto como base
+      // y sobrescribe solo los campos que están en el formulario (nuevoEnvio)
+      const envioUpdateDto: EnvioUpdateDto = {
+        ...this.currentEnvioUpdateDto, // Copia todos los campos del DTO original
+        idEnvio: this.nuevoEnvio.idEnvio, // Asegura que el ID sea el correcto
+        idConductor: this.nuevoEnvio.idChofer,
+        idVehiculo: this.nuevoEnvio.idVehiculo,
+        idRuta: this.nuevoEnvio.idRuta,
+        idPuntoAcopio: this.nuevoEnvio.idAcopio,
+        idDistrito: this.nuevoEnvio.idDestino,
+        fechSalida: this.nuevoEnvio.fechaSalida,
+        observacion: this.nuevoEnvio.observacion,
+        // fechLlegada y idEstadoEnvio se mantienen del currentEnvioUpdateDto
+        // ya que no se editan en este modal.
+      };
+      console.log('Enviando DTO de actualización al backend:', envioUpdateDto);
+      operation$ = this.envioService.actualizarEnvio(envioUpdateDto.idEnvio, envioUpdateDto);
+    } else {
+      // Es una creación
+      if (this.productoSeleccionado.length === 0) {
+        alert('Debe seleccionar al menos un producto para crear el envío.');
+        return;
+      }
+      const idProductos = this.productoSeleccionado.map(p => p.idProducto);
+      const envioCreacionDto: EnvioCreacionDto = {
+        idConductor: this.nuevoEnvio.idChofer,
+        idVehiculo: this.nuevoEnvio.idVehiculo,
+        idRuta: this.nuevoEnvio.idRuta,
+        idAcopio: this.nuevoEnvio.idAcopio,
+        idDestino: this.nuevoEnvio.idDestino,
+        fechSalida: this.nuevoEnvio.fechaSalida,
+        observacion: this.nuevoEnvio.observacion,
+        idProductosSeleccionados: idProductos
+      };
+      console.log('Enviando DTO de creación al backend:', envioCreacionDto);
+      operation$ = this.envioService.crearEnvio(envioCreacionDto);
     }
 
-    // 2. Extraer los IDs de los productos seleccionados
-    const idProductos = this.productoSeleccionado.map(p => p.idProducto);
-
-    // 3. Crear el DTO que se enviará al backend
-    const envioCreacionDto: EnvioCreacionDto = {
-      idConductor: this.nuevoEnvio.idChofer,
-      idVehiculo: this.nuevoEnvio.idVehiculo,
-      idRuta: this.nuevoEnvio.idRuta,
-      idAcopio: this.nuevoEnvio.idAcopio,   // <-- Incluye el ID de Acopio
-      idDestino: this.nuevoEnvio.idDestino, // <-- Incluye el ID de Destino
-      fechSalida: this.nuevoEnvio.fechaSalida,
-      observacion: this.nuevoEnvio.observacion,
-      idProductosSeleccionados: idProductos
-    };
-
-    console.log('Enviando DTO al backend:', envioCreacionDto);
-
-    // 4. Llamar al servicio de envío para enviar los datos al backend
-    this.envioService.crearEnvio(envioCreacionDto).subscribe({
+    // Suscribirse a la operación (creación o actualización)
+    operation$.subscribe({
       next: (response) => {
-        console.log('Envío creado exitosamente:', response);
-        alert('Envío creado y productos actualizados con éxito.');
+        console.log('Operación de envío exitosa:', response);
+        alert('Envío guardado con éxito.');
         this.modalService.dismissAll(); // Cierra el modal
-        // Opcional: Recargar los productos en almacén para reflejar los cambios de estado
-        this.loadProductosEnAlmacen();
-        // Opcional: Si tienes una tabla principal de envíos, recargarla
-        // this.loadEnviosPrincipales();
+        // Recargar productos en almacén solo si fue una creación (ya que se cambian los estados)
+        if (!this.nuevoEnvio.idEnvio) {
+            this.loadProductosEnAlmacen();
+        }
+        this.loadEnvios(); // Recarga la lista de envíos en ambos casos
       },
       error: (error) => {
-        console.error('Error al crear el envío:', error);
-        let errorMessage = 'Error al crear el envío. Por favor, intente de nuevo.';
+        console.error('Error al guardar el envío:', error);
+        let errorMessage = 'Error al guardar el envío. Por favor, intente de nuevo.';
         if (error.error && error.error.message) {
           errorMessage = error.error.message;
         } else if (error.status === 400) {
           errorMessage = 'Datos de envío incompletos o incorrectos.';
+        } else if (error.status === 404) {
+          errorMessage = 'El envío a actualizar no fue encontrado.';
         } else if (error.status === 500) {
           errorMessage = 'Error interno del servidor. Verifique los IDs o el estado del backend.';
         }
